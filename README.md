@@ -16,7 +16,7 @@ These skills were extracted from building a production iOS app with 10+ Tuist mo
 
 ## What's Inside
 
-**17 skills** organized across **5 categories**, covering everything from build system configuration to on-device AI safety guardrails.
+**18 skills** organized across **5 categories**, covering everything from build system configuration to on-device AI safety guardrails.
 
 ### 🏗️ [Architecture](skills/architecture/) — 6 skills
 
@@ -42,7 +42,7 @@ Design system infrastructure, custom navigation, and multi-language support for 
 | 16 | [Localization & Multi-Language Patterns](skills/ui/16-localization-and-multi-language-patterns.md) | Supporting 43 languages in a modular Tuist app where each framework owns its string catalogs via `bundle: .module`. Covers bilingual AI intent classification (English + Turkish keywords), locale-aware gene pools for AI personality, localized safety refusal responses for crisis situations, and test coverage for multi-language keyword detection. |
 | 17 | [safeAreaInset Stacking & Bottom-Pinned Views](skills/ui/17-safe-area-inset-stacking-and-bottom-pinned-views.md) | Why nested `safeAreaInset(edge: .bottom)` hides inner views behind the outer one. Documents five approaches that **don't work** (VStack below ScrollView, inner `safeAreaInset`, overlay, layoutPriority, toolbar bottomBar) and the root cause: the outer `safeAreaInset` always wins in Z-order. The fix: place all bottom-pinned chrome (tab bar + per-tab input bars) inside a **single** `safeAreaInset` block at the outermost level, with conditional content per tab. |
 
-### 🧪 [Testing & Debugging](skills/testing-and-debugging/) — 3 skills
+### 🧪 [Testing & Debugging](skills/testing-and-debugging/) — 4 skills
 
 Quality assurance patterns that keep modular apps reliable across CI, simulators, and Xcode Previews.
 
@@ -51,6 +51,7 @@ Quality assurance patterns that keep modular apps reliable across CI, simulators
 | 05 | [Swift Testing & TDD Patterns](skills/testing-and-debugging/05-swift-testing-and-tdd-patterns.md) | Modern Swift Testing framework (`@Suite`, `@Test`, `#expect`) over XCTest for all unit tests. Test isolation via `UserDefaults(suiteName: #function)`, five categories of tests (service logic, DI container, AI engine, sanitizer/filter, actor-based async), mock override via `ServiceProvider.shared.register()`, UI test base class with launch arguments, and regression tests driven by real bug screenshots. |
 | 09 | [Debug Modes & Mock Services](skills/testing-and-debugging/09-debug-modes-and-mock-service-strategy.md) | A three-tier mock system: Tier 1 (UI testing — minimal, fixed data), Tier 2 (rich debug — 30 days of realistic calendar patterns with Pro access), and Tier 3 (developer mode — secret gesture activation with SHA256-hashed codes for QA testers without Xcode). Shows how to override `ServiceProvider` registrations via launch arguments (`--uitesting`, `--pro-debug`) and re-register dependent services for graph consistency. |
 | 17 | [Snapshot Testing with swift-snapshot-testing](skills/testing-and-debugging/17-snapshot-testing-with-swift-snapshot-testing.md) | Per-module visual regression testing using Point-Free's swift-snapshot-testing in a Tuist modular app. Covers strategic language selection (5 of 43 locales: en, ar/RTL, de/long words, ja/CJK, tr), device matrix (SE/Pro/Pro Max), `SnapshotTestSupport` static framework with `ENABLE_TESTING_SEARCH_PATHS`, component-level and full-screen assertions, deterministic mock factories, recording vs verification modes, CI pipeline configuration, and precision tolerance for cross-platform rendering. |
+| 18 | [UI Testing for Regression & Smoke Testing](skills/testing-and-debugging/18-ui-testing-regression-and-smoke.md) | Comprehensive XCUITest suite for critical user journeys. Covers test base class with launch arguments (`--uitesting`, `--skip-onboarding`), accessibility identifier conventions, tab navigation tests, chat flow (send message, feedback buttons), chat history (open, select session, new chat), settings (name field, privacy links, web views, feedback button), keyboard behavior (show/dismiss, tab switch), CI integration, Makefile targets, and handling flaky tests with `waitForExistence` and predicates. |
 
 ### 📱 [Platform Frameworks](skills/platform-frameworks/) — 5 skills
 
@@ -167,10 +168,12 @@ iOSAgentSkills/
     │   ├── 16-localization-and-multi-language-patterns.md
     │   └── 17-safe-area-inset-stacking-and-bottom-pinned-views.md
     │
-    ├── testing-and-debugging/             ← 2 skills
+    ├── testing-and-debugging/             ← 4 skills
     │   ├── README.md
     │   ├── 05-swift-testing-and-tdd-patterns.md
-    │   └── 09-debug-modes-and-mock-service-strategy.md
+    │   ├── 09-debug-modes-and-mock-service-strategy.md
+    │   ├── 17-snapshot-testing-with-swift-snapshot-testing.md
+    │   └── 18-ui-testing-regression-and-smoke.md
     │
     ├── platform-frameworks/               ← 5 skills
     │   ├── README.md
