@@ -18,9 +18,9 @@ These skills were extracted from building a production iOS app with 10+ Tuist mo
 
 **17 skills** organized across **5 categories**, covering everything from build system configuration to on-device AI safety guardrails.
 
-### 🏗️ [Architecture](skills/architecture/) — 5 skills
+### 🏗️ [Architecture](skills/architecture/) — 6 skills
 
-The structural backbone of a modular iOS app. These skills define how code is organized, how dependencies flow, how services communicate safely across threads, and how errors propagate with full type safety.
+The structural backbone of a modular iOS app. These skills define how code is organized, how dependencies flow, how services communicate safely across threads, how errors propagate with full type safety, and how all workflows are orchestrated through a single entry point.
 
 | # | Skill | What You'll Learn |
 |---|-------|-------------------|
@@ -29,6 +29,7 @@ The structural backbone of a modular iOS app. These skills define how code is or
 | 03 | [UI Composer Pattern for Feature Modules](skills/architecture/03-ui-composer-pattern-for-feature-modules.md) | How Feature modules expose a single `UIComposer` that accepts pre-resolved dependencies via constructor injection and produces concrete SwiftUI Views (no `AnyView`). Covers factory variations for callbacks, runtime data, and the ViewModel-as-dependency-hub pattern. Eliminates service locator calls from Views entirely. |
 | 06 | [Actor-Based Concurrency Patterns](skills/architecture/06-actor-based-concurrency-patterns.md) | When to use `actor` vs `@MainActor` vs `@unchecked Sendable` with `NSLock`. Covers actor-isolated data stores (CoreData), `nonisolated` escape hatches for `AsyncThrowingStream`, actor-to-actor communication chains, `Sendable` value-type domain models, and app lifecycle integration. Prevents data races at compile time. |
 | 14 | [Typed Error System with Recovery Actions](skills/architecture/14-error-handling-and-typed-error-system.md) | A `WythnosError` enum where every case maps to a title, message, SF Symbol icon, and `RecoveryAction` — rendered through a reusable `NyxErrorCard` design system component. Includes AI safety classification (`SafetyClassification`), localized refusal responses in English and Turkish, and emergency crisis resource handling. |
+| 18 | [Makefile for iOS Project Workflows](skills/architecture/18-makefile-for-ios-project-workflows.md) | A self-documenting Makefile as the single entry point for every project workflow: Tuist lifecycle (`make setup`), multiple launch modes (`make run`, `make free`, `make fresh`, `make dev-mode`), unit and snapshot testing (`make test`, `make snapshots`, per-module `make snapshots-design`), snapshot recording (`make snapshots-record`), simulator management, and log streaming. Covers `CODE_SIGNING_ALLOWED=NO` for agents/CI, `_ensure-workspace` auto-generation, `define` functions for app discovery/launch, and `SIMULATOR=` override for targeting any device. |
 
 ### 🎨 [UI](skills/ui/) — 4 skills
 
