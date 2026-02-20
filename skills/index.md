@@ -53,8 +53,7 @@ Patterns for integrating Apple system frameworks into modular apps.
 - [[11-notification-service-with-deep-linking]] — AI-generated local notifications with deep links to native video apps across 11 platforms
 - [[12-eventkit-coredata-sync-architecture]] — three-layer sync from EventKit to CoreData with programmatic model creation and actor isolation
 - [[15-widgetkit-and-app-intents-integration]] — lightweight widgets with App Group data sharing and Siri Shortcuts
-- [[19-mac-app-store-submission-pipeline]] — certificates, code signing, notarization, and dual distribution (App Store + GitHub Releases)
-- [[20-fastlane-app-store-connect-publishing]] — end-to-end fastlane pipeline: API key auth, build upload, localized metadata sync, release automation
+- [[20-fastlane-app-store-connect-publishing]] — end-to-end publishing pipeline: certificates, code signing, notarization, fastlane lanes, dual distribution (App Store + GitHub Releases), localized metadata sync, release automation
 
 **MOC:** [[platform-frameworks-moc]]
 
@@ -73,7 +72,7 @@ Some of the most important patterns span multiple categories:
 - **The data flow triangle:** [[12-eventkit-coredata-sync-architecture]] feeds calendar context into [[08-on-device-llm-with-apple-foundation-models]] for analysis, [[11-notification-service-with-deep-linking]] for meeting reminders, and [[15-widgetkit-and-app-intents-integration]] for Home Screen display
 - **The monetization loop:** [[07-storekit2-intelligence-based-trial]] controls access to LLM queries, [[10-privacy-first-analytics-architecture]] tracks the trial funnel, and [[20-fastlane-app-store-connect-publishing]] delivers the app to users
 - **The testing pyramid:** [[05-swift-testing-and-tdd-patterns]] provides the foundation, [[09-debug-modes-and-mock-service-strategy]] supplies deterministic data, [[17-snapshot-testing-with-swift-snapshot-testing]] catches visual regressions, and [[18-ui-testing-regression-and-smoke]] validates critical user journeys
-- **The build-to-ship pipeline:** [[01-tuist-modular-architecture]] generates the project, [[18-makefile-for-ios-project-workflows]] orchestrates workflows, [[19-mac-app-store-submission-pipeline]] handles signing and notarization, and [[20-fastlane-app-store-connect-publishing]] delivers to App Store Connect
+- **The build-to-ship pipeline:** [[01-tuist-modular-architecture]] generates the project, [[18-makefile-for-ios-project-workflows]] orchestrates workflows, and [[20-fastlane-app-store-connect-publishing]] handles signing, notarization, and App Store delivery
 - **Concurrency everywhere:** [[06-actor-based-concurrency-patterns]] defines the rules that [[02-protocol-driven-service-catalog]], [[12-eventkit-coredata-sync-architecture]], [[07-storekit2-intelligence-based-trial]], and [[10-privacy-first-analytics-architecture]] all follow
 
 ## Explorations Needed
