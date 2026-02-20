@@ -1,3 +1,8 @@
+---
+title: "Swift Testing Framework Patterns and TDD in Modular iOS Apps"
+description: "Modern Swift Testing framework over XCTest for all unit tests. Test isolation via UserDefaults scoping, five test categories, mock override via ServiceProvider, and regression tests from real bugs."
+---
+
 # Swift Testing Framework Patterns and TDD in Modular iOS Apps
 
 ## Context
@@ -74,7 +79,7 @@ struct DailyQueryTrackerTests {
 }
 ```
 
-**2. DI container tests — verify registration, resolution, singleton behavior:**
+**2. DI container tests — verify registration, resolution, singleton behavior (see [[02-protocol-driven-dependency-injection]]):**
 ```swift
 @Suite("ServiceProvider Tests")
 struct ServiceProviderTests {
@@ -103,7 +108,7 @@ struct DynamicPromptEngineTests {
         let engine = DynamicPromptEngine()
         #expect(engine.classifyIntent("Do I have any conflicts?").category == .conflictDetection)
         #expect(engine.classifyIntent("When am I free?").category == .freeTimeAnalysis)
-        #expect(engine.classifyIntent("Çakışma var mı?").category == .conflictDetection)  // Turkish
+        #expect(engine.classifyIntent("Çakışma var mı?").category == .conflictDetection)  // Turkish — see [[16-localization-and-multi-language-patterns]]
     }
     
     @Test("Evolution stage advances with interaction count")
@@ -176,6 +181,8 @@ struct InMemoryTrainingStoreTests {
 
 ### UI Test Base Class Pattern
 
+The base class below is shared with [[18-ui-testing-regression-and-smoke]] for full regression coverage:
+
 ```swift
 class WythnosUITestCase: XCTestCase {
     var app: XCUIApplication!
@@ -225,7 +232,7 @@ actor RichMockCalendarStore: CalendarStoreProtocol {
 - **Swift Testing is 2-3x faster** than XCTest for pure logic tests due to parallel execution
 - **`UserDefaults(suiteName: #function)`** guarantees zero test interference
 - **Regression tests from real bugs** (screenshot-driven) prevent regressions
-- **Mock override pattern** (`ServiceProvider.shared.register` in test setup) enables full integration testing without external services
+- **Mock override pattern** (`ServiceProvider.shared.register` in test setup) enables full integration testing without external services — see [[09-debug-modes-and-mock-service-strategy]] for the three-tier mock system
 - **Async-first testing** with `async` test functions validates actor-based concurrency correctly
 
 ## Anti-Patterns
