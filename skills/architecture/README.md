@@ -1,29 +1,32 @@
-# Architecture Skills
+# Architecture — Map of Content
 
-Foundational patterns for building modular, testable, and scalable iOS applications.
+The structural backbone of a modular iOS app. These skills define how code is organized into modules, how dependencies flow between them, how services communicate safely across threads, and how the entire project is orchestrated from a single entry point.
 
-## Skills
+## The Module Foundation
 
-- [01 — Tuist-Based Modular Architecture](01-tuist-modular-architecture.md) — Declarative build system with Core/Feature module layers
-- [02 — Protocol-Driven Service Catalog](02-protocol-driven-service-catalog.md) — Compile-time safe DI without third-party frameworks
-- [03 — UI Factory Pattern](03-ui-composer-pattern-for-feature-modules.md) — Constructor-injected factories for Feature module composition
-- [06 — Actor-Based Concurrency](06-actor-based-concurrency-patterns.md) — Thread-safe services using Swift actors
-- [14 — Typed Error System](14-error-handling-and-typed-error-system.md) — Structured errors with recovery actions
-- [18 — Makefile for iOS Project Workflows](18-makefile-for-ios-project-workflows.md) — Single entry point for build, run, test, and snapshot workflows
+Everything starts with [[01-tuist-modular-architecture]]. It defines the two-layer module hierarchy — Core frameworks that own protocols and domain logic, Feature frameworks that depend on Core and expose UI through factories. The App target sits at the top as the composition root where all dependencies are wired together.
 
-## How These Fit Together
+That wiring happens through [[02-protocol-driven-service-catalog]], a ~80-line catalog that uses `KeyPath`-based resolution and `NSLock` for thread safety. Each Core module declares a protocol, each Feature module declares a `Blueprint` factory, and the App target registers everything at launch.
+
+Feature modules expose their UI through [[03-ui-composer-pattern-for-feature-modules]]. A factory accepts pre-resolved protocol dependencies via constructor injection and produces concrete SwiftUI Views — no `AnyView`, no service locator calls from inside Views. This is the public API boundary of every Feature module.
+
+## Concurrency & Safety
+
+[[06-actor-based-concurrency-patterns]] defines the concurrency rules every service must follow: `actor` for mutable data stores, `@MainActor` for ViewModels, `@unchecked Sendable` with `NSLock` for lightweight containers like `Catalog`. These rules ensure the catalog from [[02-protocol-driven-service-catalog]] and the data stores from [[12-eventkit-coredata-sync-architecture]] are thread-safe at compile time.
+
+[[14-error-handling-and-typed-error-system]] provides typed errors that carry recovery actions, SF Symbol icons, and localized messages. Error types conform to `Sendable` so they can cross actor boundaries safely — a direct requirement of [[06-actor-based-concurrency-patterns]]. The error card component comes from [[04-design-system-as-core-module]].
+
+## Project Orchestration
+
+[[18-makefile-for-ios-project-workflows]] wraps the Tuist lifecycle, build commands, test execution, and App Store submission into self-documenting `make` targets. It depends on the project structure from [[01-tuist-modular-architecture]] and feeds into the publishing pipeline defined in [[20-fastlane-app-store-connect-publishing]].
+
+## How They Connect
 
 ```
-┌─────────────────────────────────────────────┐
-│                   App Layer                  │
-│  (Composition Root, Catalog Preparation — #02)  │
-├──────────┬──────────┬───────────────────────┤
-│ Feature A│ Feature B│  Feature C            │
-│ (UI Factory — #03)  │  (UI Factory — #03)   │
-├──────────┴──────────┴───────────────────────┤
-│              Core Services                   │
-│  (Actors — #06, Typed Errors — #14)         │
-├─────────────────────────────────────────────┤
-│           Tuist Module Graph (#01)           │
-└─────────────────────────────────────────────┘
+01 Tuist Modular Architecture
+ ├── 02 Service Catalog (composition root lives in App target)
+ │    ├── 03 UI Composer Pattern (composers are Blueprints)
+ │    └── 06 Actor Concurrency (Catalog is @unchecked Sendable)
+ ├── 14 Error Handling (Sendable errors cross actor boundaries)
+ └── 18 Makefile (orchestrates the Tuist lifecycle)
 ```
