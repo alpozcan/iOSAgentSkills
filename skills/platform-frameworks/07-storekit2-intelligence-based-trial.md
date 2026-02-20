@@ -1,3 +1,8 @@
+---
+title: "StoreKit 2 Subscription System with Intelligence-Based Trial"
+description: "Intelligence-based trial ending when AI demonstrates value (50 interactions, 3 patterns, or 21 days). TrialManager actor state machine, DailyQueryTracker, StoreKit 2 async API, and trial funnel analytics."
+---
+
 # StoreKit 2 Subscription System with Intelligence-Based Trial
 
 ## Context
@@ -22,7 +27,7 @@ Free Tier (rate-limited, inline upgrade cards)
 At ANY point: User subscribes → Pro (permanent until expiration)
 ```
 
-### TrialManager (Actor-Based State Machine)
+### TrialManager ([[06-actor-based-concurrency-patterns|Actor-Based]] State Machine)
 
 ```swift
 public actor TrialManager {
@@ -190,11 +195,11 @@ public enum ProFeature: String, Sendable {
 if !isPremium && dailyQueryTracker.isLimitReached {
     analytics.track(.freeLimitHit(type: "daily_query"))
     messages.append(ChatMessage(content: "upgrade_hint", isUser: false))
-    return  // Don't send to LLM
+    return  // Don't send to LLM (see [[08-on-device-llm-with-apple-foundation-models]])
 }
 ```
 
-### Analytics Integration for Trial Funnel
+### [[10-privacy-first-analytics-architecture|Analytics]] Integration for Trial Funnel
 
 ```swift
 public extension AnalyticsEvent {

@@ -1,3 +1,8 @@
+---
+title: "Privacy-First Analytics Architecture"
+description: "Pluggable multi-backend analytics actor with typed event factory methods, strict privacy filter (no PII), nonisolated fire-and-forget tracking, buffer+flush pattern, and OSLog fallback."
+---
+
 # Privacy-First Analytics Architecture
 
 ## Context
@@ -13,6 +18,7 @@ public protocol AnalyticsBackend: Sendable {
     func flush() async
 }
 
+// Actor pattern — see [[06-actor-based-concurrency-patterns]]
 public actor AnalyticsService: AnalyticsServiceProtocol {
     private var backends: [AnalyticsBackend]
     private var eventBuffer: [AnalyticsEvent] = []
@@ -59,6 +65,7 @@ public extension AnalyticsEvent {
         .init(name: "button_tap", parameters: ["button": button, "screen": screen])
     }
     
+    // Tracks [[08-on-device-llm-with-apple-foundation-models|on-device LLM]] performance
     static func llmInference(durationMs: Int, tokenCount: Int) -> AnalyticsEvent {
         .init(name: "llm_inference", parameters: [
             "duration_ms": "\(durationMs)",
@@ -66,7 +73,7 @@ public extension AnalyticsEvent {
         ])
     }
     
-    // Trial/conversion funnel
+    // Trial/conversion funnel (see [[07-storekit2-intelligence-based-trial]])
     static func trialMaturityReached(days: Int, interactions: Int, patterns: Int) -> AnalyticsEvent { ... }
     static func paywallViewed(source: String) -> AnalyticsEvent { ... }
     static func subscriptionStarted(productID: String, trialDay: Int, source: String) -> AnalyticsEvent { ... }
@@ -78,7 +85,7 @@ public extension AnalyticsEvent {
 
 ```swift
 // NEVER sent to any backend:
-// - Calendar event titles
+// - Calendar event titles (see [[12-eventkit-coredata-sync-architecture]])
 // - Event locations
 // - Event notes
 // - User names

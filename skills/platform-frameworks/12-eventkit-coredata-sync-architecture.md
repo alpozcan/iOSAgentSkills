@@ -1,7 +1,12 @@
+---
+title: "EventKit to CoreData Sync Architecture"
+description: "Three-layer sync pipeline from EventKit to CoreData: CalendarService abstraction, CalendarSyncManager orchestrator, CalendarStore actor. Programmatic CoreData model, upsert by ID, and in-memory stores for tests."
+---
+
 # EventKit to CoreData Sync Architecture
 
 ## Context
-Your app reads calendar events from the system (EventKit) and needs to make them available for AI analysis, offline querying, and widget display. You need a sync layer that handles full sync, incremental sync, and background refresh — storing events in CoreData for fast local access.
+Your app reads calendar events from the system (EventKit) and needs to make them available for AI analysis, offline querying, and [[15-widgetkit-and-app-intents-integration|widget]] display. You need a sync layer that handles full sync, incremental sync, and background refresh — storing events in CoreData for fast local access. This data also powers [[11-notification-service-with-deep-linking|notifications]].
 
 ## Pattern
 
@@ -182,10 +187,10 @@ let fetched = try await store.fetchEvents(from: startDate, to: endDate)
 
 ## Why This Matters
 
-- **Actor isolation** for CoreData prevents threading crashes — `newBackgroundContext()` + `perform` is the correct pattern
-- **Programmatic CoreData model** avoids `.xcdatamodeld` — better for modular Tuist projects where models live in framework targets
+- **[[06-actor-based-concurrency-patterns|Actor isolation]]** for CoreData prevents threading crashes — `newBackgroundContext()` + `perform` is the correct pattern
+- **Programmatic CoreData model** avoids `.xcdatamodeld` — better for modular [[01-tuist-modular-architecture|Tuist]] projects where models live in framework targets
 - **Upsert by ID** prevents duplicate events when syncing
-- **`inMemory: true` constructor** enables fast, isolated unit tests without file system side effects
+- **`inMemory: true` constructor** enables fast, isolated [[05-swift-testing-and-tdd-patterns|unit tests]] without file system side effects
 - **Incremental sync** is O(recent events) instead of O(all events), critical for large calendars
 - **Pure value-type domain model** (`CalendarEvent`) crosses actor boundaries safely
 

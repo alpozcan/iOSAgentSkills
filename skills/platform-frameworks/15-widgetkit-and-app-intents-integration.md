@@ -1,14 +1,19 @@
+---
+title: "WidgetKit and App Intents Integration"
+description: "Lightweight Home Screen widgets as a separate Tuist target with TimelineProvider, multi-size views, App Group data sharing, AppIntent for Siri Shortcuts, and 15-minute refresh cadence."
+---
+
 # WidgetKit and App Intents Integration
 
 ## Context
-You need lightweight Home Screen widgets and Siri Shortcuts that display calendar data from your app's CoreData store. Widgets must refresh periodically, display correctly in multiple sizes, and use the same design language as the main app.
+You need lightweight Home Screen widgets and Siri Shortcuts that display calendar data from your app's CoreData store. Widget content may vary based on [[07-storekit2-intelligence-based-trial|trial state]]. Widgets must refresh periodically, display correctly in multiple sizes, and use the same design language as the main app.
 
 ## Pattern
 
 ### Widget Extension as Separate Target
 
 ```swift
-// In Project.swift — widget is a separate target, not part of the app framework graph
+// In Project.swift — widget is a separate [[01-tuist-modular-architecture|Tuist]] target, not part of the app framework graph
 let widgetTarget: [Target] = [
     .target(
         name: "WythnosWidgets",
@@ -128,7 +133,7 @@ struct TomorrowWidget: Widget {
 
 ### Data Sharing via App Groups
 
-For widgets to access the main app's CoreData store:
+For widgets to access the main app's [[12-eventkit-coredata-sync-architecture|CoreData store]]:
 1. Enable App Groups capability for both app and widget targets
 2. Use a shared `NSPersistentContainer` pointed at the App Group directory
 3. Widget reads data; main app writes data
