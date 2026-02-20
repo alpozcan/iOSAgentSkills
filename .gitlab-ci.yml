@@ -1,0 +1,361 @@
+stages:
+  - validate
+  - update
+  - report
+
+variables:
+  SKILLS_DIR: "skills"
+
+# ──────────────────────────────────────────────
+# Validate frontmatter on all skill files
+# ──────────────────────────────────────────────
+validate:frontmatter:
+  stage: validate
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - "skills/**/*.md"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "skills/**/*.md"
+  script:
+    - |
+      echo "Checking YAML frontmatter on all skill files..."
+      errors=0
+      for file in $(find "$SKILLS_DIR" -name '*.md' ! -name 'README.md' ! -name 'index.md'); do
+        first_line=$(head -1 "$file")
+        if [ "$first_line" != "---" ]; then
+          echo "MISSING frontmatter: $file"
+          errors=$((errors + 1))
+          continue
+        fi
+        # Check frontmatter closes
+        close_line=$(tail -n +2 "$file" | grep -n '^---$' | head -1 | cut -d: -f1)
+        if [ -z "$close_line" ]; then
+          echo "UNCLOSED frontmatter: $file"
+          errors=$((errors + 1))
+          continue
+        fi
+        # Check required fields
+        frontmatter=$(head -n $((close_line + 1)) "$file")
+        if ! echo "$frontmatter" | grep -q '^title:'; then
+          echo "MISSING title: $file"
+          errors=$((errors + 1))
+        fi
+        if ! echo "$frontmatter" | grep -q '^description:'; then
+          echo "MISSING description: $file"
+          errors=$((errors + 1))
+        fi
+      done
+      if [ "$errors" -gt 0 ]; then
+        echo ""
+        echo "$errors frontmatter error(s) found."
+        exit 1
+      fi
+      echo "All skill files have valid frontmatter."
+
+# ──────────────────────────────────────────────
+# Validate all wikilinks resolve to real files
+# ──────────────────────────────────────────────
+validate:wikilinks:
+  stage: validate
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - "skills/**/*.md"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "skills/**/*.md"
+  script:
+    - |
+      echo "Checking all wikilinks resolve to existing files..."
+      errors=0
+
+      # Build a set of valid link targets (filenames without extension)
+      valid_targets=""
+      for file in $(find "$SKILLS_DIR" -name '*.md'); do
+        basename=$(basename "$file" .md)
+        valid_targets="$valid_targets $basename"
+      done
+
+      # Extract all [[target]] and [[target|label]] wikilinks
+      for file in $(find "$SKILLS_DIR" -name '*.md'); do
+        # grep all wikilinks, extract the target part (before |)
+        links=$(grep -oE '\[\[[^]]+\]\]' "$file" 2>/dev/null | sed 's/\[\[//;s/\]\]//;s/|.*//' || true)
+        for link in $links; do
+          found=0
+          for target in $valid_targets; do
+            if [ "$link" = "$target" ]; then
+              found=1
+              break
+            fi
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "BROKEN link: [[$link]] in $file"
+            errors=$((errors + 1))
+          fi
+        done
+      done
+      if [ "$errors" -gt 0 ]; then
+        echo ""
+        echo "$errors broken wikilink(s) found."
+        exit 1
+      fi
+      echo "All wikilinks resolve to existing files."
+
+# ──────────────────────────────────────────────
+# Check index.md lists every skill file
+# ──────────────────────────────────────────────
+validate:index-completeness:
+  stage: validate
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - "skills/**/*.md"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "skills/**/*.md"
+  script:
+    - |
+      echo "Checking index.md lists all skill files..."
+      errors=0
+      index="$SKILLS_DIR/index.md"
+
+      if [ ! -f "$index" ]; then
+        echo "MISSING: $index"
+        exit 1
+      fi
+
+      for file in $(find "$SKILLS_DIR" -name '*.md' ! -name 'README.md' ! -name 'index.md'); do
+        basename=$(basename "$file" .md)
+        if ! grep -q "\[\[$basename" "$index"; then
+          echo "NOT IN INDEX: $basename ($file)"
+          errors=$((errors + 1))
+        fi
+      done
+      if [ "$errors" -gt 0 ]; then
+        echo ""
+        echo "$errors skill(s) missing from index.md"
+        exit 1
+      fi
+      echo "All skills are listed in index.md."
+
+# ──────────────────────────────────────────────
+# Check every skill has at least one wikilink
+# ──────────────────────────────────────────────
+validate:connectivity:
+  stage: validate
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - "skills/**/*.md"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "skills/**/*.md"
+  allow_failure: true
+  script:
+    - |
+      echo "Checking skill connectivity (each skill should link to at least one other)..."
+      warnings=0
+
+      for file in $(find "$SKILLS_DIR" -name '*.md' ! -name 'README.md' ! -name 'index.md'); do
+        count=$(grep -coE '\[\[[^]]+\]\]' "$file" 2>/dev/null || echo "0")
+        if [ "$count" -eq 0 ]; then
+          echo "ISOLATED: $(basename "$file" .md) — no outgoing wikilinks"
+          warnings=$((warnings + 1))
+        fi
+      done
+      if [ "$warnings" -gt 0 ]; then
+        echo ""
+        echo "$warnings isolated skill(s) — consider adding wikilinks."
+        exit 1
+      fi
+      echo "All skills are connected to the graph."
+
+# ──────────────────────────────────────────────
+# Regenerate skills graph when new skills land
+# on main. Reads frontmatter from each skill to
+# rebuild index.md and category READMEs, then
+# commits and pushes if anything changed.
+# ──────────────────────────────────────────────
+update:skills-graph:
+  stage: update
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - "skills/**/*.md"
+  before_script:
+    - apk add --no-cache git
+    - git config user.name "GitLab CI"
+    - git config user.email "ci@gitlab.com"
+    - git remote set-url origin "https://oauth2:${GRAPH_UPDATE_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+  script:
+    - |
+      set -e
+
+      SKILLS_DIR="skills"
+      INDEX="$SKILLS_DIR/index.md"
+
+      # ── Helper: extract a frontmatter field ──
+      get_field() {
+        file="$1"; field="$2"
+        close_line=$(tail -n +2 "$file" | grep -n '^---$' | head -1 | cut -d: -f1)
+        head -n $((close_line + 1)) "$file" | grep "^${field}:" | sed "s/^${field}:[[:space:]]*//" | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//"
+      }
+
+      # ── Map directory names to index.md section headers ──
+      section_for_category() {
+        case "$1" in
+          architecture)         echo "## Architecture" ;;
+          ui)                   echo "## UI" ;;
+          testing-and-debugging) echo "## Testing & Debugging" ;;
+          platform-frameworks)  echo "## Platform Frameworks" ;;
+          ai-and-intelligence)  echo "## AI & Intelligence" ;;
+          *)                    echo "" ;;
+        esac
+      }
+
+      changed=0
+
+      # ── Scan every skill file ──
+      for file in $(find "$SKILLS_DIR" -name '*.md' ! -name 'README.md' ! -name 'index.md' | sort); do
+        slug=$(basename "$file" .md)
+        category=$(basename "$(dirname "$file")")
+        section=$(section_for_category "$category")
+
+        if [ -z "$section" ]; then
+          echo "SKIP: unknown category '$category' for $file"
+          continue
+        fi
+
+        # ── Update index.md ──
+        if ! grep -q "\[\[$slug" "$INDEX" 2>/dev/null; then
+          description=$(get_field "$file" "description")
+          if [ -z "$description" ]; then
+            description="(no description)"
+          fi
+          entry="- [[$slug]] — $description"
+
+          # Find the section's MOC line (e.g. "**MOC:**") and insert before it
+          section_escaped=$(echo "$section" | sed 's/[&/\]/\\&/g')
+          moc_pattern="^\*\*MOC:\*\*"
+
+          # Find line numbers: section header, then the next MOC line after it
+          section_line=$(grep -n "^${section}$" "$INDEX" | head -1 | cut -d: -f1)
+          if [ -n "$section_line" ]; then
+            moc_line=$(tail -n +"$section_line" "$INDEX" | grep -n "$moc_pattern" | head -1 | cut -d: -f1)
+            if [ -n "$moc_line" ]; then
+              # Absolute line number of MOC marker
+              insert_at=$((section_line + moc_line - 2))
+              # Insert the new entry before the MOC line (with a blank line)
+              sed -i "${insert_at}a\\
+${entry}" "$INDEX"
+              echo "ADDED to index.md ($section): $slug"
+              changed=1
+            else
+              echo "WARN: could not find MOC marker for $section — skipping $slug"
+            fi
+          else
+            echo "WARN: section '$section' not found in index.md — skipping $slug"
+          fi
+        fi
+
+        # ── Update category README ──
+        readme="$SKILLS_DIR/$category/README.md"
+        if [ -f "$readme" ] && ! grep -q "\[\[$slug" "$readme" 2>/dev/null; then
+          title=$(get_field "$file" "title")
+          description=$(get_field "$file" "description")
+          if [ -z "$title" ]; then
+            title="$slug"
+          fi
+          if [ -z "$description" ]; then
+            description="(no description)"
+          fi
+
+          # Append before "## How It Connects" or "## How They Connect", or at EOF
+          connect_line=$(grep -n '^## How .* Connect' "$readme" | head -1 | cut -d: -f1)
+          if [ -n "$connect_line" ]; then
+            insert_at=$((connect_line - 1))
+            sed -i "${insert_at}a\\
+\\
+[[$slug]] — $description" "$readme"
+          else
+            printf '\n[[$slug]] — %s\n' "$description" >> "$readme"
+          fi
+          echo "ADDED to $readme: $slug"
+          changed=1
+        fi
+      done
+
+      # ── Commit and push if anything changed ──
+      if [ "$changed" -eq 1 ]; then
+        git add "$SKILLS_DIR/index.md" "$SKILLS_DIR"/*/README.md
+        git commit -m "ci: regenerate skills graph for new skills
+
+      Co-Authored-By: GitLab CI <ci@gitlab.com>"
+        git push origin HEAD:main
+        echo "Skills graph updated and pushed."
+      else
+        echo "No new skills detected — graph is up to date."
+      fi
+
+# ──────────────────────────────────────────────
+# Generate graph report as a pipeline artifact
+# ──────────────────────────────────────────────
+report:graph-stats:
+  stage: report
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - "skills/**/*.md"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "skills/**/*.md"
+  script:
+    - |
+      echo "# Skill Graph Report" > graph-report.md
+      echo "" >> graph-report.md
+
+      # Count skills
+      skill_count=$(find "$SKILLS_DIR" -name '*.md' ! -name 'README.md' ! -name 'index.md' | wc -l | tr -d ' ')
+      echo "**Total skills:** $skill_count" >> graph-report.md
+      echo "" >> graph-report.md
+
+      # Count by category
+      echo "## By Category" >> graph-report.md
+      echo "" >> graph-report.md
+      for dir in $(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d | sort); do
+        category=$(basename "$dir")
+        count=$(find "$dir" -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+        echo "- **$category:** $count" >> graph-report.md
+      done
+      echo "" >> graph-report.md
+
+      # Count total wikilinks
+      total_links=$(grep -roE '\[\[[^]]+\]\]' "$SKILLS_DIR" --include='*.md' | wc -l | tr -d ' ')
+      echo "**Total wikilinks:** $total_links" >> graph-report.md
+      echo "" >> graph-report.md
+
+      # Most connected skills (by incoming links)
+      echo "## Most Referenced Skills (incoming links)" >> graph-report.md
+      echo "" >> graph-report.md
+      for file in $(find "$SKILLS_DIR" -name '*.md' ! -name 'README.md' ! -name 'index.md'); do
+        basename=$(basename "$file" .md)
+        incoming=$(grep -roE "\[\[$basename" "$SKILLS_DIR" --include='*.md' | grep -v "$file" | wc -l | tr -d ' ')
+        echo "$incoming $basename"
+      done | sort -rn | head -10 | while read count name; do
+        echo "- \`$name\`: $count" >> graph-report.md
+      done
+
+      echo "" >> graph-report.md
+      cat graph-report.md
+  artifacts:
+    paths:
+      - graph-report.md
+    expire_in: 30 days
