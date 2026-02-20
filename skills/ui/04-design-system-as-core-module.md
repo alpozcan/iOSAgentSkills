@@ -1,3 +1,8 @@
+---
+title: "Design System as a Core Framework Module"
+description: "Four-layer design system as a Core module: tokens (colors, typography, spacing), reusable components, animation primitives, and centralized haptic feedback. Dark-mode-only, 4pt grid, OLED-optimized."
+---
+
 # Design System as a Core Framework Module
 
 ## Context
@@ -5,7 +10,7 @@ Every Feature module needs consistent colors, typography, spacing, animations, a
 
 ## Pattern
 
-Build the design system as a **Core framework module** with four layers: tokens, components, animations, and haptics.
+Build the design system as a **Core framework module** (see [[01-tuist-modular-architecture]]) with four layers: tokens, components, animations, and haptics.
 
 ### Layer 1: Design Tokens (Static Enums, No Instances)
 
@@ -83,7 +88,7 @@ public struct NyxCard<Content: View>: View {
     }
 }
 
-// NyxErrorCard — typed error states with recovery actions
+// NyxErrorCard — typed error states with recovery actions (see [[14-error-handling-and-typed-error-system]])
 public struct NyxErrorCard: View {
     let error: WythnosError
     let onRecovery: ((RecoveryAction) -> Void)?
@@ -201,8 +206,8 @@ public struct NyxPressableStyle: ButtonStyle {
 
 - **Compile-time guarantee** — every Feature module imports `DesignSystem` and uses the same tokens
 - **Enum-based tokens** — no instances, no allocation, no runtime lookups
-- **Haptic consistency** — centralized enum prevents scattered `UIImpactFeedbackGenerator` allocations
-- **Testable components** — components like `NyxErrorCard` can be tested for correct error-to-action mapping
+- **Haptic consistency** — centralized enum prevents scattered `UIImpactFeedbackGenerator` allocations; these haptics are used throughout the [[13-swiftui-custom-tab-bar-and-navigation|custom tab bar]]
+- **Testable components** — components like `NyxErrorCard` can be tested for correct error-to-action mapping (see [[14-error-handling-and-typed-error-system]])
 
 ## Anti-Patterns
 
