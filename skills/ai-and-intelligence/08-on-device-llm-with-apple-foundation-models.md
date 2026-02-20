@@ -1,3 +1,8 @@
+---
+title: "On-Device LLM Integration with Apple Foundation Models"
+description: "100% on-device LLM using Apple Foundation Models with dynamic prompt gene pool, fitness-weighted selection, feedback-driven evolution, safety classification decorator, and response sanitization."
+---
+
 # On-Device LLM Integration with Apple Foundation Models
 
 ## Context
@@ -105,6 +110,7 @@ public enum GeneType: String, Codable, CaseIterable, Sendable {
 ### Prompt Synthesis (Gene Selection → Assembly)
 
 ```swift
+// Calendar context comes from [[12-eventkit-coredata-sync-architecture]]
 public func synthesizePrompt(for intent: UserIntent, context: CalendarSnapshot, ...) -> SynthesizedPrompt {
     var components: [PromptGene] = []
     
@@ -153,6 +159,7 @@ public func evolveFromFeedback(prompt: SynthesizedPrompt, response: String, feed
 ### Safety Layer (Decorator Pattern)
 
 ```swift
+// Actor isolation — see [[06-actor-based-concurrency-patterns]]
 public actor SafetyAwareLLMEngine: LLMEngineProtocol {
     private let baseEngine: LLMEngineProtocol
     private let safetyGuardrail: SafetyGuardrailProtocol
@@ -167,6 +174,7 @@ public actor SafetyAwareLLMEngine: LLMEngineProtocol {
             let response = try await baseEngine.generateResponse(systemPrompt: safeSystemPrompt, userPrompt: userPrompt)
             return try await filterAndValidate(response)
         case .offTopic:
+            // Refusal responses are [[16-localization-and-multi-language-patterns|localized]]
             return safetyGuardrail.generateRefusal(for: .offTopic, locale: .current)
         case .harmful(let type):
             return safetyGuardrail.generateRefusal(for: type, locale: .current)
@@ -206,16 +214,16 @@ public struct ResponseSanitizer: ResponseSanitizerProtocol {
 
 ## Why This Matters
 
-- **Zero data leaves the device** — all inference is on-device, perfect for privacy-sensitive domains
+- **Zero data leaves the device** — all inference is on-device, perfect for privacy-sensitive domains (tracked via [[10-privacy-first-analytics-architecture|privacy-first analytics]])
 - **No model download** — Apple's Foundation Models are pre-installed with the OS
 - **Gene pool evolution** — prompts improve over time based on user feedback, without retraining
-- **Safety layer as decorator** — `SafetyAwareLLMEngine` wraps `FoundationModelsEngine` transparently
+- **Safety layer as decorator** — `SafetyAwareLLMEngine` wraps `FoundationModelsEngine` transparently, with [[14-error-handling-and-typed-error-system|typed errors]] for classification failures
 - **Response sanitization** catches LLM artifacts (meta-labels, missing spaces) before they reach the UI
 
 ## Anti-Patterns
 
 - Don't hardcode prompts as string literals — use the gene pool system
 - Don't skip the safety classification layer — even on-device models can produce harmful content
-- Don't assume `isAvailable()` always returns true — device may lack Neural Engine
+- Don't assume `isAvailable()` always returns true — device may lack Neural Engine. [[07-storekit2-intelligence-based-trial|Query limits]] gate access during the free tier
 - Don't accumulate `LanguageModelSession` instances — create them per request
 - Don't display raw LLM output — always sanitize first

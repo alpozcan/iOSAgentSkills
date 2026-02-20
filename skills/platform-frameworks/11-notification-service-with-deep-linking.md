@@ -1,3 +1,8 @@
+---
+title: "Local Notification Service with LLM-Generated Content and Deep Linking"
+description: "Actor-based notification service scheduling AI-generated local notifications (weekly summaries, meeting reminders). Deep linking to 11 native video apps, engagement-gated permission requests, and smart meeting scoring."
+---
+
 # Local Notification Service with LLM-Generated Content and Deep Linking
 
 ## Context
@@ -11,7 +16,7 @@ You need a notification system that sends contextual, AI-generated local push no
 public actor NotificationService: NotificationServiceProtocol {
     private let notificationCenter: UNUserNotificationCenter
     private let contentGenerator: NotificationContentGeneratorProtocol
-    private let calendarStore: CalendarStoreProtocol
+    private let calendarStore: CalendarStoreProtocol  // see [[12-eventkit-coredata-sync-architecture]]
     private let deepLinkHandler: DeepLinkHandlerProtocol
     private let preferencesStore: NotificationPreferencesStore
     
@@ -185,10 +190,10 @@ public struct SmartMeetingDetector {
 
 ## Why This Matters
 
-- **LLM-generated notification content** is personalized and contextual, not templated
+- **[[08-on-device-llm-with-apple-foundation-models|LLM-generated]] notification content** is personalized and contextual, not templated
 - **Deep linking to native video apps** (Zoom, Meet, Teams) lets users join meetings from the notification
 - **Engagement-gated permission requests** result in higher opt-in rates than asking on first launch
-- **`actor` isolation** prevents race conditions when scheduling/canceling notifications concurrently
+- **[[06-actor-based-concurrency-patterns|`actor` isolation]]** prevents race conditions when scheduling/canceling notifications concurrently
 - **Preferences persistence** via `Codable` + `UserDefaults` with smart defaults
 
 ## Anti-Patterns
