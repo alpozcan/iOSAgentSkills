@@ -1,3 +1,8 @@
+---
+title: "Typed Error System with Recovery Actions"
+description: "Typed error enum with recovery actions, SF Symbol icons, safety classification for AI responses, and localized refusal handling for crisis situations."
+---
+
 # Typed Error System with Recovery Actions
 
 ## Context
@@ -170,10 +175,10 @@ case .emergency:
 
 - **Every error has exactly one recovery path** — no ambiguity for the user
 - **Typed enum prevents stringly-typed errors** — compiler enforces handling of every case
-- **The error card is a design system component** — consistent across all features
-- **Safety classification** integrates error handling with AI safety at the architecture level
-- **Localized refusals** respect the user's language preference
-- **`Sendable` conformance** ensures errors can safely cross actor boundaries
+- **The error card is a [[04-design-system-as-core-module|design system]] component** — consistent across all features
+- **[[08-on-device-llm-with-apple-foundation-models|Safety classification]]** integrates error handling with AI safety at the architecture level
+- **[[16-localization-and-multi-language-patterns|Localized refusals]]** respect the user's language preference
+- **`Sendable` conformance** ensures errors can safely cross [[06-actor-based-concurrency-patterns|actor boundaries]]
 
 ## Anti-Patterns
 
