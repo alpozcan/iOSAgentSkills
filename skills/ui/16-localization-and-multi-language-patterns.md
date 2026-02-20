@@ -1,3 +1,8 @@
+---
+title: "Localization and Multi-Language Patterns for iOS"
+description: "Supporting 43 languages in a modular Tuist app with per-module string catalogs, bilingual AI intent classification, locale-aware safety refusal responses, and multi-language keyword detection testing."
+---
+
 # Localization and Multi-Language Patterns for iOS
 
 ## Context
@@ -7,7 +12,7 @@ Your app targets 43 languages and uses AI that must handle multi-language input 
 
 ### String Localization in Modular Frameworks
 
-Each module uses `bundle: .module` (Tuist-generated) for its own string catalogs:
+Each module uses `bundle: .module` (Tuist-generated per [[01-tuist-modular-architecture]]) for its own string catalogs:
 
 ```swift
 // In ChatUI module
@@ -24,7 +29,7 @@ var label: String {
 
 ### Multi-Language AI Intent Classification
 
-The intent classifier must recognize keywords in every supported language:
+The [[08-on-device-llm-with-apple-foundation-models|intent classifier]] must recognize keywords in every supported language:
 
 ```swift
 public func classifyIntent(_ query: String) -> UserIntent {
@@ -122,8 +127,8 @@ func turkishIntentClassification() {
 - **`bundle: .module`** ensures each framework resolves its own string catalog, not the app's
 - **Bilingual intent classification** handles code-switching (Turkish/English in same query)
 - **Locale-aware gene pool** means the AI's personality adapts to the user's language
-- **Localized safety responses** are critical — a Turkish-speaking user in crisis must see resources in Turkish
-- **Test coverage for each language** catches regressions in keyword-based classification
+- **Localized safety responses** are critical — a Turkish-speaking user in crisis must see resources in Turkish (see [[14-error-handling-and-typed-error-system|typed error and refusal handling]])
+- **Test coverage for each language** catches regressions in keyword-based classification (using [[05-swift-testing-and-tdd-patterns]] and [[17-snapshot-testing-with-swift-snapshot-testing|snapshot testing]] for visual language verification)
 
 ## Anti-Patterns
 
