@@ -10,7 +10,7 @@ Created and maintained by [**Alp Özcan**](https://github.com/alpozcan).
 
 AI coding agents are powerful, but they lack the opinionated, battle-tested architectural knowledge that comes from shipping real iOS apps. They'll happily generate a `ViewController` with 2,000 lines, wire up Singletons everywhere, and skip actor isolation entirely.
 
-**iOS Agent Skills** is a collection of 16 self-contained skill documents that teach AI agents (and developers) how to build modular, testable, privacy-first iOS applications using modern Swift patterns. Each skill encodes a specific architectural decision — the kind of thing a senior iOS engineer carries in their head but rarely writes down.
+**iOS Agent Skills** is a collection of 19 self-contained skill documents that teach AI agents (and developers) how to build modular, testable, privacy-first iOS applications using modern Swift patterns. Each skill encodes a specific architectural decision — the kind of thing a senior iOS engineer carries in their head but rarely writes down.
 
 These skills were extracted from building a production iOS app with 10+ Tuist modules, on-device LLM integration (Apple Foundation Models), StoreKit 2 subscriptions, EventKit–CoreData sync, and a fully custom SwiftUI design system. They represent real patterns that survived contact with real users.
 
@@ -76,30 +76,65 @@ On-device AI architecture for privacy-first, zero-latency inference.
 
 ---
 
+## Skill Graph
+
+These skills form a **skill graph** — a network of interconnected markdown files where [[wikilinks]] carry meaning in prose. Instead of 20 isolated documents, you get a traversable knowledge structure where each skill links to the ones it depends on, enables, or complements.
+
+**Entry point:** [`skills/index.md`](skills/index.md) — scan the landscape, then follow links into the areas that matter for your task.
+
+### How the Graph Works
+
+- **YAML frontmatter** on every skill file — scan `title` and `description` without reading the full content
+- **Wikilinks in prose** — `[[skill-name]]` links woven into sentences tell the agent *when* and *why* to follow them
+- **Maps of Content (MOCs)** — each category README organizes its skills into a navigable sub-topic with cross-category connections
+- **Progressive disclosure** — index → MOC descriptions → wikilinks → sections → full content. Most decisions happen before reading a single full file
+
+### Key Clusters
+
+| Cluster | Skills | What Connects Them |
+|---------|--------|--------------------|
+| **Module Foundation** | 01 → 02 → 03 | Tuist modules → DI composition root → UI factories |
+| **Data Flow Triangle** | 12 → 08, 11, 15 | CoreData sync feeds LLM, notifications, and widgets |
+| **Monetization Loop** | 07 ↔ 10 → 20 | Trial controls access, analytics tracks funnel, fastlane ships |
+| **Testing Pyramid** | 09 → 05, 17, 18 | Mock data feeds unit, snapshot, and UI tests |
+| **Build-to-Ship** | 01 → 18 → 20 | Project gen → Makefile → App Store delivery |
+
 ## How to Use These Skills
 
-### 🤖 As AI Agent Context
+### As AI Agent Context (Skill Graph)
 
-Point your AI coding agent at individual skill files or entire categories to give it production-grade iOS knowledge:
+Point your agent at the graph index and let it traverse:
 
 ```bash
-# Load a specific skill as context
-@skills/architecture/01-tuist-modular-architecture.md
+# Start from the graph entry point — agent follows relevant links
+@skills/index.md
 
-# Load all architecture skills for a broad foundation
+# Load a category MOC for focused context
+@skills/architecture/README.md
+
+# Load a specific skill with its cross-references
+@skills/architecture/01-tuist-modular-architecture.md
+```
+
+The agent reads the index, scans frontmatter descriptions, follows wikilinks that matter for the current task, and skips what doesn't. This is the difference between injecting a document and giving the agent a knowledge structure to navigate.
+
+### As Flat Context (Traditional)
+
+Each skill is still **self-contained** — it provides enough context to implement the pattern correctly without reading other skills:
+
+```bash
+# Load all architecture skills as flat context
 @skills/architecture/
 
-# Load everything for a comprehensive iOS knowledge base
+# Load everything
 @skills/
 ```
 
-Each skill is **self-contained** — it provides enough context for an AI agent to implement the pattern correctly without reading other skills. Cross-references between skills are informational, not required.
-
-### 📖 As a Developer Reference
+### As a Developer Reference
 
 Browse the categories above and jump to whichever skill matches your current implementation challenge. The skills are numbered for reference but can be read in any order.
 
-### 🧩 As a Starting Point for Your Own Skills
+### As a Starting Point for Your Own Skills
 
 Fork this repo and add skills specific to your project's domain. The [CONTRIBUTING.md](CONTRIBUTING.md) guide explains the file naming convention, template structure, and quality checklist.
 
@@ -107,9 +142,14 @@ Fork this repo and add skills specific to your project's domain. The [CONTRIBUTI
 
 ## Skill Structure
 
-Every skill follows the same three-part structure for consistency:
+Every skill follows the same structure for consistency:
 
-```
+```yaml
+---
+title: "Skill Title"
+description: "1-2 sentence summary scannable without reading the file"
+---
+
 # Title
 
 ## Context
@@ -118,12 +158,13 @@ When and why you need this pattern. What problem does it solve?
 ## Pattern
 The concrete implementation with Swift code.
 Broken into layers/steps with ### subheadings.
+[[wikilinks]] to related skills woven into prose.
 
 ## Why This Matters / Anti-Patterns
 Guardrails — what to do and what to avoid.
 ```
 
-This structure is designed for AI agent consumption: the **Context** helps the agent decide *whether* to apply the skill, the **Pattern** provides *how*, and the **Anti-Patterns** prevent common mistakes.
+The **YAML frontmatter** lets agents scan descriptions without reading full files. The **Context** helps decide *whether* to apply the skill, the **Pattern** provides *how* with `[[wikilinks]]` pointing to related skills, and the **Anti-Patterns** prevent common mistakes.
 
 ---
 
@@ -154,13 +195,15 @@ iOSAgentSkills/
 ├── LICENSE                                ← MIT License
 │
 └── skills/
-    ├── architecture/                      ← 5 skills
+    ├── index.md                           ← Skill graph entry point
+    ├── architecture/                      ← 6 skills
     │   ├── README.md
     │   ├── 01-tuist-modular-architecture.md
     │   ├── 02-protocol-driven-dependency-injection.md
     │   ├── 03-ui-factory-pattern-for-feature-modules.md
     │   ├── 06-actor-based-concurrency-patterns.md
-    │   └── 14-error-handling-and-typed-error-system.md
+    │   ├── 14-error-handling-and-typed-error-system.md
+    │   └── 18-makefile-for-ios-project-workflows.md
     │
     ├── ui/                                ← 4 skills
     │   ├── README.md
