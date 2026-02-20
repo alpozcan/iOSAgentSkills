@@ -16,7 +16,7 @@ These skills were extracted from building a production iOS app with 10+ Tuist mo
 
 ## What's Inside
 
-**18 skills** organized across **5 categories**, covering everything from build system configuration to on-device AI safety guardrails.
+**19 skills** organized across **5 categories**, covering everything from build system configuration to on-device AI safety guardrails.
 
 ### 🏗️ [Architecture](skills/architecture/) — 6 skills
 
@@ -53,9 +53,9 @@ Quality assurance patterns that keep modular apps reliable across CI, simulators
 | 17 | [Snapshot Testing with swift-snapshot-testing](skills/testing-and-debugging/17-snapshot-testing-with-swift-snapshot-testing.md) | Per-module visual regression testing using Point-Free's swift-snapshot-testing in a Tuist modular app. Covers strategic language selection (5 of 43 locales: en, ar/RTL, de/long words, ja/CJK, tr), device matrix (SE/Pro/Pro Max), `SnapshotTestSupport` static framework with `ENABLE_TESTING_SEARCH_PATHS`, component-level and full-screen assertions, deterministic mock factories, recording vs verification modes, CI pipeline configuration, and precision tolerance for cross-platform rendering. |
 | 18 | [UI Testing for Regression & Smoke Testing](skills/testing-and-debugging/18-ui-testing-regression-and-smoke.md) | Comprehensive XCUITest suite for critical user journeys. Covers test base class with launch arguments (`--uitesting`, `--skip-onboarding`), accessibility identifier conventions, tab navigation tests, chat flow (send message, feedback buttons), chat history (open, select session, new chat), settings (name field, privacy links, web views, feedback button), keyboard behavior (show/dismiss, tab switch), CI integration, Makefile targets, and handling flaky tests with `waitForExistence` and predicates. |
 
-### 📱 [Platform Frameworks](skills/platform-frameworks/) — 5 skills
+### 📱 [Platform Frameworks](skills/platform-frameworks/) — 6 skills
 
-Patterns for integrating Apple system frameworks (StoreKit, EventKit, WidgetKit, UNUserNotificationCenter) into modular apps.
+Patterns for integrating Apple system frameworks (StoreKit, EventKit, WidgetKit, UNUserNotificationCenter) into modular apps, plus App Store publishing and direct distribution pipelines.
 
 | # | Skill | What You'll Learn |
 |---|-------|-------------------|
@@ -64,6 +64,7 @@ Patterns for integrating Apple system frameworks (StoreKit, EventKit, WidgetKit,
 | 11 | [Notification Service with Deep Linking](skills/platform-frameworks/11-notification-service-with-deep-linking.md) | An actor-based notification service that schedules LLM-generated local notifications (weekly summaries, meeting reminders, insight milestones). Deep linking to native video call apps (Zoom, Meet, Teams, Webex — 11 platforms) by extracting URLs from event locations and converting to native URL schemes. Covers engagement-gated permission requests, smart meeting importance scoring, and `NotificationPreferences` with `Codable` persistence. |
 | 12 | [EventKit–CoreData Sync Architecture](skills/platform-frameworks/12-eventkit-coredata-sync-architecture.md) | A three-layer sync pipeline: `CalendarService` (EventKit abstraction) → `CalendarSyncManager` (orchestrator actor) → `CalendarStore` (CoreData actor). Covers programmatic CoreData model creation (no `.xcdatamodeld` — better for Tuist framework targets), upsert by ID, `NSMergeByPropertyObjectTrumpMergePolicy`, full sync (90 days back + 7 forward), incremental sync from last sync date, `Sendable` value-type domain models, and `inMemory: true` for fast tests. |
 | 15 | [WidgetKit & App Intents Integration](skills/platform-frameworks/15-widgetkit-and-app-intents-integration.md) | Lightweight Home Screen widgets as a separate Tuist target with no framework dependencies. Covers `TimelineProvider` with placeholder/snapshot/timeline, multi-size widget views (`systemSmall` + `systemMedium`), `containerBackground(.black, for: .widget)` (iOS 17+), `AppIntent` for Siri Shortcuts, data sharing via App Groups, and 15-minute refresh cadence for battery efficiency. |
+| 20 | [App Store Connect Publishing Pipeline](skills/platform-frameworks/20-fastlane-app-store-connect-publishing.md) | End-to-end publishing pipeline: certificate creation (Development, Distribution, Developer ID), App Store Connect API key auth, fastlane lanes (create_app, build, upload, metadata, release) for iOS and macOS, xcodebuild archive workflows, ExportOptions plist, Developer ID direct distribution with notarization, GitHub Releases, entitlements management, Makefile integration for App Store and direct distribution targets, and a first-time setup script. |
 
 ### 🤖 [AI & Intelligence](skills/ai-and-intelligence/) — 1 skill
 
@@ -175,13 +176,14 @@ iOSAgentSkills/
     │   ├── 17-snapshot-testing-with-swift-snapshot-testing.md
     │   └── 18-ui-testing-regression-and-smoke.md
     │
-    ├── platform-frameworks/               ← 5 skills
+    ├── platform-frameworks/               ← 6 skills
     │   ├── README.md
     │   ├── 07-storekit2-intelligence-based-trial.md
     │   ├── 10-privacy-first-analytics-architecture.md
     │   ├── 11-notification-service-with-deep-linking.md
     │   ├── 12-eventkit-coredata-sync-architecture.md
-    │   └── 15-widgetkit-and-app-intents-integration.md
+    │   ├── 15-widgetkit-and-app-intents-integration.md
+    │   └── 20-fastlane-app-store-connect-publishing.md
     │
     └── ai-and-intelligence/               ← 1 skill
         ├── README.md
