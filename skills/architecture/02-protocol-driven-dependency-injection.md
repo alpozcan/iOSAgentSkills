@@ -1,7 +1,12 @@
+---
+title: "Protocol-Driven Dependency Injection Without Third-Party Frameworks"
+description: "A complete DI system in ~80 lines of Swift with KeyPath-based type-safe resolution, NSLock thread safety, singleton vs transient registration, and clean reset for test isolation."
+---
+
 # Protocol-Driven Dependency Injection Without Third-Party Frameworks
 
 ## Context
-You need compile-time safe dependency injection in a modular iOS app where each module defines its own protocol, but registration and resolution happen at the app composition root. You want zero third-party DI frameworks.
+You need compile-time safe dependency injection in a modular iOS app where each module defines its own protocol, but registration and resolution happen at the [[01-tuist-modular-architecture|app composition root]]. You want zero third-party DI frameworks.
 
 ## Pattern
 
@@ -47,7 +52,7 @@ extension ServiceProvider {
             CalendarServiceSpec(),
             CalendarStoreSpec(),
             LLMEngineSpec(),
-            // Feature factories
+            // [[03-ui-factory-pattern-for-feature-modules|Feature factories]]
             ChatUISpec(),
             InsightsUISpec(),
         ]
@@ -188,8 +193,8 @@ struct ServiceProviderTests {
 
 - **No framework dependency** — the entire DI system is ~80 lines of Swift
 - **Type-safe resolution** via `KeyPath` — compiler catches typos
-- **Thread-safe** via `NSLock` + `@unchecked Sendable`
-- **Testable** — `reset()` wipes all registrations for clean test state; any protocol can be replaced with a mock
+- **Thread-safe** via `NSLock` + `@unchecked Sendable` (see [[06-actor-based-concurrency-patterns]])
+- **Testable** — `reset()` wipes all registrations for [[05-swift-testing-and-tdd-patterns|clean test state]]; any protocol can be replaced with a mock
 - **Registration order matters** — specs are listed in dependency order in `allSpecs()`
 
 ## Anti-Patterns

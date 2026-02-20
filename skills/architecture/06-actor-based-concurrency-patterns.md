@@ -1,3 +1,8 @@
+---
+title: "Actor-Based Concurrency Patterns for iOS Services"
+description: "When to use actor vs @MainActor vs @unchecked Sendable with NSLock. Covers actor-isolated stores, nonisolated escape hatches, Sendable value types, and app lifecycle integration."
+---
+
 # Actor-Based Concurrency Patterns for iOS Services
 
 ## Context
@@ -7,7 +12,7 @@ Modern iOS apps have multiple services (calendar store, notification service, su
 
 ### When to Use `actor` vs `@MainActor` vs `@unchecked Sendable`
 
-**Use `actor` for data stores and services with mutable state:**
+**Use `actor` for data stores and services with mutable state** (e.g., the [[12-eventkit-coredata-sync-architecture|CalendarStore]]):
 ```swift
 public actor CalendarStore: CalendarStoreProtocol {
     private let container: NSPersistentContainer
@@ -55,7 +60,7 @@ public actor AnalyticsService: AnalyticsServiceProtocol {
 }
 ```
 
-**Use `@MainActor` for ViewModels:**
+**Use `@MainActor` for ViewModels** (created by [[03-ui-factory-pattern-for-feature-modules|UIFactories]]):
 ```swift
 @MainActor
 public final class ChatViewModel: ObservableObject {
@@ -73,7 +78,7 @@ public final class ChatViewModel: ObservableObject {
 }
 ```
 
-**Use `@unchecked Sendable` with `NSLock` for lightweight thread-safe containers:**
+**Use `@unchecked Sendable` with `NSLock` for lightweight thread-safe containers (e.g., the [[02-protocol-driven-dependency-injection|ServiceProvider]]):**
 ```swift
 public final class ServiceProvider: DependencyResolving, @unchecked Sendable {
     private let lock = NSLock()
@@ -147,6 +152,7 @@ public struct CalendarEvent: Sendable, Identifiable, Hashable {
 }
 
 // Enums are naturally Sendable
+// Enums are naturally Sendable (see also [[14-error-handling-and-typed-error-system]])
 public enum SafetyClassification: Sendable, Equatable {
     case safe
     case offTopic

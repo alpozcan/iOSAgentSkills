@@ -1,7 +1,12 @@
+---
+title: "UI Factory Pattern for Feature Module Composition"
+description: "Feature modules expose a single UIFactory that accepts protocol dependencies via constructor injection and produces concrete SwiftUI Views -- no AnyView, no service locator."
+---
+
 # UI Factory Pattern for Feature Module Composition
 
 ## Context
-In a modular iOS app, Feature modules need to construct Views with ViewModels that depend on multiple Core services. The Feature module cannot access the DI container directly (that would create a circular dependency), and Views should not know about service resolution.
+In a [[01-tuist-modular-architecture|modular iOS app]], Feature modules need to construct Views with ViewModels that depend on multiple Core services. The Feature module cannot access the DI container directly (that would create a circular dependency), and Views should not know about service resolution.
 
 ## Pattern
 
@@ -9,7 +14,7 @@ Each Feature module exposes a **UIFactory** that accepts pre-resolved dependenci
 
 ### Three-Part Feature Module Structure
 
-**1. The Spec (DI integration point)**
+**1. The Spec ([[02-protocol-driven-dependency-injection|DI integration point]])**
 ```swift
 // Chat/Sources/ChatUIFactory.swift
 public struct ChatUISpec: DependencySpec {
@@ -143,7 +148,7 @@ public final class ChatViewModel: ObservableObject {
 
 - **Feature modules are self-contained** — they expose a single `UIFactory` and nothing else
 - **No service locator calls inside Views or ViewModels** — all dependencies are constructor-injected
-- **`@MainActor` on `make*View()`** ensures Views are created on the main thread
+- **[[06-actor-based-concurrency-patterns|`@MainActor`]] on `make*View()`** ensures Views are created on the main thread
 - **Testable** — create a `ChatUIFactory` with mock services directly, no DI container needed
 - **Views are concrete types** (not `AnyView`) — better SwiftUI performance and type safety
 

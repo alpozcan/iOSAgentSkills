@@ -1,3 +1,8 @@
+---
+title: "Tuist-Based Modular iOS Architecture"
+description: "Declarative Tuist build system with Core/Feature module layers, strict dependency boundaries, and automatic test target generation for 10+ module iOS apps."
+---
+
 # Tuist-Based Modular iOS Architecture
 
 ## Context
@@ -11,7 +16,7 @@ Use **Tuist** with a single `Project.swift` that defines **Core** and **Feature*
 
 ```
 Core Modules (frameworks)     → No feature dependencies, only ServiceProvider + other Core
-Feature Modules (frameworks)  → Depend on Core modules, never on other Features
+Feature Modules (frameworks)  → Depend on Core modules, never on other Features; expose UI through a [[03-ui-factory-pattern-for-feature-modules|single UIFactory]]
 App Target                    → Depends on everything, wires DI
 Widget / Intent Extensions    → Lightweight, share data via App Groups
 ```
@@ -92,7 +97,7 @@ Modules/
 1. **Every module gets a test target by default** (`hasTests: true`)
 2. **Feature modules name their internal directory differently** from the framework name (e.g., framework `ChatUI`, directory `Chat`) — this is handled by the `moduleName` parameter in `featureFramework()`
 3. **External dependencies are declared once** and flow through the dependency graph — only `AnalyticsService` depends on `TelemetryDeck`; no other module needs to
-4. **The app target is the only target that depends on ALL modules** — it serves as the composition root
+4. **The app target is the only target that depends on ALL modules** — it serves as the [[02-protocol-driven-dependency-injection|composition root]] where all services are registered
 
 ### Dependency Graph Pattern
 
@@ -119,7 +124,7 @@ let coreTargets: [Target] =
 - **Compile-time dependency enforcement** — if `ChatUI` tries to import `SettingsUI`, the build fails
 - **Parallel builds** — independent modules compile concurrently
 - **Test isolation** — each module's tests only depend on that module, preventing test pollution
-- **Onboarding speed** — `tuist generate` gives any engineer a working project in seconds
+- **Onboarding speed** — `tuist generate` gives any engineer a working project in seconds, orchestrated through a [[18-makefile-for-ios-project-workflows|project Makefile]]
 
 ## Anti-Patterns
 
