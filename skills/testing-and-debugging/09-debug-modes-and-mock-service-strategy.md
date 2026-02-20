@@ -1,3 +1,8 @@
+---
+title: "Debug Modes and Stub Service Strategy for iOS Apps"
+description: "Three-tier mock system: UI testing (minimal), rich debug (realistic 30-day data), and developer mode (gesture-activated with SHA256). Launch arguments control which tier is active."
+---
+
 # Debug Modes and Stub Service Strategy for iOS Apps
 
 ## Context
@@ -116,6 +121,8 @@ public final class DeveloperModeActivator: ObservableObject {
 
 ### Registration Flow in App Entry Point
 
+Stub services are supplied via [[02-protocol-driven-service-catalog|Catalog]] overrides at launch:
+
 ```swift
 @main
 struct MyApp: App {
@@ -150,6 +157,8 @@ struct MyApp: App {
 ```
 
 ### UI Test Base Class
+
+The base class passes launch arguments to the app, enabling [[18-ui-testing-regression-and-smoke|UI regression tests]] with deterministic state:
 
 ```swift
 class WythnosUITestCase: XCTestCase {
@@ -194,4 +203,4 @@ if isUITesting || isProDebug {
 - Don't use `#if DEBUG` for mock selection — use launch arguments so the same binary works in all modes
 - Don't skip re-supplying dependent services after overriding their dependencies
 - Don't hardcode the developer code — hash it and store the hash in a `.gitignore`d file
-- Don't use mock services for unit tests — inject mocks directly via constructor
+- Don't use mock services for unit tests — inject mocks directly via constructor (see [[05-swift-testing-and-tdd-patterns]] for unit test patterns and [[17-snapshot-testing-with-swift-snapshot-testing]] for snapshot mock factories)
