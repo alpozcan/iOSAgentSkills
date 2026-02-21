@@ -19,6 +19,7 @@ The structural backbone. These skills define how code is organized, how dependen
 - [[06-actor-based-concurrency-patterns]] — when to use `actor` vs `@MainActor` vs `@unchecked Sendable`. The concurrency rules that every service and ViewModel must follow
 - [[14-error-handling-and-typed-error-system]] — typed errors with recovery actions, safety classification for AI responses, and localized refusal handling
 - [[18-makefile-for-ios-project-workflows]] — the single entry point for every project workflow: build, test, run, snapshot, and App Store submission
+- [[24-swiftdata-and-observation-framework-patterns]] — @Model, @Observable, @Query, and @ModelActor in modular apps. CoreData migration, actor-isolated queries, and fine-grained view observation
 
 **MOC:** [[architecture-moc]]
 
@@ -30,6 +31,7 @@ Design system infrastructure and navigation patterns for SwiftUI apps.
 - [[13-swiftui-custom-tab-bar-and-navigation]] — replacing `TabView` with `safeAreaInset(edge: .bottom)`, re-tap scroll-to-top, splash screen transitions
 - [[16-localization-and-multi-language-patterns]] — 43 languages with per-module string catalogs, bilingual AI intent classification, locale-aware safety responses
 - [[17-safe-area-inset-stacking-and-bottom-pinned-views]] — why nested `safeAreaInset` fails and how to fix it. The five approaches that don't work and the one that does
+- [[21-accessibility-voiceover-dynamic-type-patterns]] — VoiceOver traversal order, Dynamic Type with @ScaledMetric, reduced motion fallbacks, WCAG color contrast audits, and automated accessibility testing
 
 **MOC:** [[ui-moc]]
 
@@ -41,6 +43,8 @@ Quality assurance patterns that keep modular apps reliable.
 - [[09-debug-modes-and-mock-service-strategy]] — three-tier mock system (UI testing, rich debug, developer mode) with launch argument flags
 - [[17-snapshot-testing-with-swift-snapshot-testing]] — per-module visual regression with a strategic 5-language matrix and 3 device sizes
 - [[18-ui-testing-regression-and-smoke]] — XCUITest for critical user journeys: navigation, chat flow, settings, keyboard behavior
+- [[25-performance-monitoring-and-profiling-patterns]] — MetricKit, os.signpost custom intervals, launch time profiling, memory pressure tests, privacy-aware metric reporting
+- [[26-structured-logging-and-log-levels]] — per-module os.Logger configuration, log level discipline, privacy annotations, log forging prevention, OSLogStore for debug builds
 
 **MOC:** [[testing-moc]]
 
@@ -54,6 +58,8 @@ Patterns for integrating Apple system frameworks into modular apps.
 - [[12-eventkit-coredata-sync-architecture]] — three-layer sync from EventKit to CoreData with programmatic model creation and actor isolation
 - [[15-widgetkit-and-app-intents-integration]] — lightweight widgets with App Group data sharing and Siri Shortcuts
 - [[20-fastlane-app-store-connect-publishing]] — end-to-end publishing pipeline: certificates, code signing, notarization, fastlane lanes, dual distribution (App Store + GitHub Releases), localized metadata sync, release automation
+- [[22-github-actions-ci-cd-for-ios]] — complete CI/CD pipeline with PR testing, snapshot validation across locale/device matrix, archive builds with fastlane match, and App Store submission
+- [[23-app-clips-and-shared-extensions-modular-architecture]] — App Clips, Share Extensions, and Notification Content Extensions as separate Tuist targets with filtered Core dependencies and binary size optimization
 
 **MOC:** [[platform-frameworks-moc]]
 
@@ -77,7 +83,6 @@ Some of the most important patterns span multiple categories:
 
 ## Explorations Needed
 
-- Missing: accessibility patterns (VoiceOver, Dynamic Type scaling, reduced motion). The design system enforces 44pt touch targets but doesn't document VoiceOver traversal order
-- Missing: CI/CD pipeline skill (GitHub Actions workflows). The Makefile and fastlane are ready but no workflow YAML exists
-- Missing: App Clips or ShareExtension patterns for modular apps
-- Scaling question: at what module count does Tuist generation time become a bottleneck?
+- Scaling question: at what module count does Tuist generation time become a bottleneck? (See [[25-performance-monitoring-and-profiling-patterns]] for profiling guidance)
+- Missing: CloudKit sync patterns with SwiftData conflict resolution
+- Missing: visionOS / spatial computing adaptation patterns for modular apps
