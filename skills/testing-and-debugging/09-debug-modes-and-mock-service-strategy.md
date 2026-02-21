@@ -189,6 +189,18 @@ if isUITesting || isProDebug {
 }
 ```
 
+## Edge Cases
+
+- **Launch arguments in release builds:** `ProcessInfo.processInfo.arguments` is accessible in release builds too. A user could inject `--uitesting` via URL scheme or MDM profile. Gate mock service registration behind `#if DEBUG`:
+  ```swift
+  #if DEBUG
+  if isUITesting { /* supply stubs */ }
+  #endif
+  ```
+- **Developer mode code brute force:** The SHA256-validated developer code has no rate limiting. Add a delay (e.g., 2 seconds) after each failed attempt and lock out after 10 failures to prevent brute force.
+- **`removePersistentDomain` clearing user data:** The clean state pattern `UserDefaults.standard.removePersistentDomain(forName: bundleId)` removes ALL user preferences — including onboarding completion, notification preferences, and trial state. This is intentional for UI testing but catastrophic if accidentally triggered in production. Always guard with `#if DEBUG`.
+- **Mock data determinism:** `responses.randomElement()!` in `PreviewLLMEngine` makes debug sessions non-reproducible. For bug reports, seed the random generator or use indexed cycling instead.
+
 ## Why This Matters
 
 - **UI tests are deterministic** — fixed mock data means no flaky tests from calendar permissions or StoreKit sandbox

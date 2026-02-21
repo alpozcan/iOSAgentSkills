@@ -407,6 +407,33 @@ if emptyState.waitForExistence(timeout: 3) {
 }
 ```
 
+## Edge Cases
+
+- **Onboarding flow test:** Test the full onboarding flow with `--show-onboarding` launch argument. Verify each step progresses, calendar permission dialog appears (in simulator it auto-dismisses), and completion transitions to the main tab view.
+  ```swift
+  class OnboardingUITests: WythnosUITestCase {
+      override var launchArguments: [String] { ["--uitesting", "--show-onboarding"] }
+
+      func testOnboardingCompletesSuccessfully() {
+          // Verify onboarding steps
+          XCTAssertTrue(app.otherElements["onboarding_welcome"].waitForExistence(timeout: 5))
+          app.buttons["onboarding_continue"].tap()
+          // ... progress through steps
+          XCTAssertTrue(app.otherElements["insights_view"].waitForExistence(timeout: 10))
+      }
+  }
+  ```
+- **Rotation test:** Verify layout integrity after device rotation, especially for the chat input bar and tab bar:
+  ```swift
+  func testRotationPreservesLayout() {
+      XCUIDevice.shared.orientation = .landscapeLeft
+      sleep(1)
+      XCTAssertTrue(app.buttons["chat_send_button"].waitForExistence(timeout: 5))
+      XCUIDevice.shared.orientation = .portrait
+  }
+  ```
+- **NSPredicate in UI tests:** The test helpers use `NSPredicate(format: "label CONTAINS[c] %@", text)` with `%@` substitution, which is safe. Never use string interpolation in predicates — this prevents predicate injection from accessibility labels containing special characters.
+
 ## Why This Matters
 
 - **Regression tests catch bugs before merge** - Every PR runs critical path tests

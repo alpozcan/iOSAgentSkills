@@ -227,6 +227,23 @@ actor PreviewCalendarStore: CalendarStoreProtocol {
 }
 ```
 
+## Edge Cases
+
+- **`UserDefaults(suiteName:)` force unwrap:** The pattern `UserDefaults(suiteName: #function)!` force unwraps because `suiteName` can theoretically return nil for invalid names. In practice, `#function` always produces a valid suite name. However, if you use dynamic strings, prefer `guard let defaults = UserDefaults(suiteName: name) else { ... }`.
+- **Parallel test interference:** Swift Testing runs `@Test` functions in parallel by default. If two tests use the same `suiteName` (e.g., both hardcode `"test"`), they corrupt each other's state. Always use `#function` as the suite name.
+- **Async timeout workarounds:** Swift Testing doesn't have a built-in timeout mechanism like XCTest's `waitForExpectations`. For actor-based tests, use `Task.sleep` with a reasonable upper bound and check state, or wrap in `withTimeout { }` utility.
+- **Parameterized test example:** Use `@Test(arguments:)` for data-driven tests:
+  ```swift
+  @Test("Intent classification", arguments: [
+      ("conflict", UserIntentCategory.conflictDetection),
+      ("çakışma", UserIntentCategory.conflictDetection),
+      ("free time", UserIntentCategory.freeTimeAnalysis),
+  ])
+  func intentClassification(query: String, expected: UserIntentCategory) {
+      #expect(engine.classifyIntent(query).category == expected)
+  }
+  ```
+
 ## Why This Matters
 
 - **Swift Testing is 2-3x faster** than XCTest for pure logic tests due to parallel execution

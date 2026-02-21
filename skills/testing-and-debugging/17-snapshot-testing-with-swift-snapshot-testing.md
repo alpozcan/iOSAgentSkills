@@ -286,6 +286,8 @@ SNAPSHOT_TESTING_RECORD=all xcodebuild test ...
 3. **Never auto-record on CI**: The default `.missing` mode records locally; on CI, missing references should fail
 4. **Commit `__Snapshots__/`**: Reference images must be in git so diffs are visible in PRs
 5. **Parallel execution**: Snapshot tests are stateless — enable Xcode parallel testing
+6. **CI rendering differences:** Snapshot images rendered on macOS CI (GitHub Actions) may differ from local renders due to font hinting, anti-aliasing, and GPU differences. Pin the simulator version AND the macOS runner version. Use `perceptualPrecision: 0.98` to tolerate minor rendering variations.
+7. **Simulator version pinning:** Always specify the iOS version in CI destinations (e.g., `OS=18.2`). Without it, the default simulator version changes with Xcode updates, invalidating all reference images.
 
 ## Why This Matters
 
