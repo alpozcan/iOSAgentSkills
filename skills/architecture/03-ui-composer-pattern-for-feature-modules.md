@@ -144,6 +144,44 @@ public final class ChatViewModel: ObservableObject {
 }
 ```
 
+### Split Factory Pattern (SRP for Large Features)
+
+When a feature has many screens (5+), split the factory into sub-factories:
+
+```swift
+public struct ChatUIComposer {
+    // Sub-factories for distinct flows within Chat
+    public let conversationFactory: ConversationSubComposer
+    public let historyFactory: HistorySubComposer
+
+    public init(store: CalendarStoreProtocol, llmEngine: LLMEngineProtocol, ...) {
+        self.conversationFactory = ConversationSubComposer(store: store, llmEngine: llmEngine)
+        self.historyFactory = HistorySubComposer(store: store)
+    }
+}
+
+// Each sub-factory owns its own screen construction
+public struct ConversationSubComposer {
+    private let store: CalendarStoreProtocol
+    private let llmEngine: LLMEngineProtocol
+
+    @MainActor
+    public func composeConversationView() -> ConversationView { ... }
+
+    @MainActor
+    public func composeDetailView(for message: ChatMessage) -> MessageDetailView { ... }
+}
+```
+
+**Rule:** Callbacks (navigation, completion) go in `compose*()` parameters. Dependencies (services, stores) go in the factory constructor. This keeps the factory's constructor stable while allowing per-screen customization.
+
+## Edge Cases
+
+- **Stale dependencies after factory creation:** If a factory is created during `prepareAll()` and a dependency is later replaced (e.g., mock override in tests), the factory still holds the old reference. Mitigation: create factories lazily at call sites, not eagerly at registration.
+- **Thread safety:** Factories are created during service registration (any thread) but `makeView()` must run on `@MainActor`. The `@MainActor` annotation on `compose*View()` methods enforces this at compile time.
+- **Memory leaks from retained closures:** Callbacks passed to `make*View(onComplete:)` can retain the calling ViewModel, creating retain cycles. Use `[weak self]` in callbacks or make factories value types (structs) so they don't participate in cycles.
+- **Factory explosion:** Don't create a factory for every screen — only for feature entry points. Internal navigation within a feature can use standard SwiftUI `NavigationStack` without factories.
+
 ## Why This Matters
 
 - **Feature modules are self-contained** — they expose a single `UIComposer` and nothing else
@@ -158,3 +196,5 @@ public final class ChatViewModel: ObservableObject {
 - Don't use `@EnvironmentObject` for core service dependencies — it's invisible and crashes at runtime if missing
 - Don't create ViewModels inside Views — the Factory creates the ViewModel and passes it to the View
 - Don't return `AnyView` from factories unless absolutely necessary (e.g., conditional views) — prefer concrete types
+- Don't eagerly create all factories at registration time — create them lazily to avoid stale dependency references
+- Don't put navigation logic inside factories — factories create views, navigation coordinators handle flow

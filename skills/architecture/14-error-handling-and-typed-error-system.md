@@ -171,6 +171,85 @@ case .emergency:
     return "I'm not equipped to help with this, but please know that support is available. Contact \(resource). You matter."
 ```
 
+### Alternative: Extracted ErrorPresentation (SRP)
+
+The enum above bundles 4 concerns (title, message, icon, recovery) into one type. For larger apps, extract presentation into a separate struct:
+
+```swift
+public struct ErrorPresentation: Sendable {
+    public let title: String
+    public let message: String
+    public let icon: String
+    public let recoveryAction: RecoveryAction?
+}
+
+extension WythnosError {
+    public var presentation: ErrorPresentation {
+        switch self {
+        case .calendarAccessDenied:
+            return ErrorPresentation(
+                title: "Calendar Access Required",
+                message: "Wythnos needs calendar access to provide insights. Please enable it in Settings.",
+                icon: "calendar.badge.exclamationmark",
+                recoveryAction: .openSettings
+            )
+        // ... other cases
+        }
+    }
+}
+```
+
+**Tradeoff:** The inline computed properties are simpler for small error sets (< 10 cases). Extract `ErrorPresentation` when error cases exceed ~10 or when multiple UI components need different presentation logic.
+
+### Open-Closed Principle: Feature Module Errors
+
+Feature modules should define their own error types conforming to a shared protocol, converted to `WythnosError` at module boundaries:
+
+```swift
+// In Core module
+public protocol AppError: Error, Sendable {
+    var presentation: ErrorPresentation { get }
+}
+
+extension WythnosError: AppError {}
+
+// In CalendarFeature module
+enum CalendarFeatureError: AppError {
+    case eventConflict(Date)
+    case pastDateModification
+
+    var presentation: ErrorPresentation {
+        switch self {
+        case .eventConflict(let date):
+            return ErrorPresentation(
+                title: "Event Conflict",
+                message: "You already have an event at \(date.formatted())",
+                icon: "calendar.badge.exclamationmark",
+                recoveryAction: .dismiss
+            )
+        case .pastDateModification:
+            return ErrorPresentation(
+                title: "Cannot Modify Past Event",
+                message: "Events in the past cannot be edited.",
+                icon: "clock.badge.xmark",
+                recoveryAction: .dismiss
+            )
+        }
+    }
+}
+```
+
+This lets each feature add errors without modifying the core `WythnosError` enum.
+
+## Edge Cases
+
+- **Nested errors:** `syncFailed` wrapping a network error loses inner context. Use `syncFailed(underlying: Error)` or log the inner error before converting to `WythnosError` for display.
+- **Recovery action failures:** The `.openSettings` action uses `UIApplication.openSettingsURLString`. On iOS 18+, Apple changed the URL scheme for per-app settings — always fall back to the general Settings URL if the specific one fails.
+- **Missing SF Symbol on older iOS:** Some SF Symbols (e.g., `calendar.badge.exclamationmark`) require iOS 16+. Use `if #available` or restrict to your minimum deployment target's symbol set.
+- **Emergency resources offline:** The `.emergency` case provides crisis hotline info. Ensure these are hardcoded strings (not fetched from a server) so they work offline.
+- **Localization of error strings:** Error `title` and `message` should use `String(localized:)` keys, not hardcoded English. See [[16-localization-and-multi-language-patterns]] for the pattern.
+- **Error logging:** Errors should be logged before presentation using `os.Logger` with appropriate privacy levels. Never log user-identifiable information in error messages at `.public` level. See logging modes documentation for structured logging patterns.
+
 ## Why This Matters
 
 - **Every error has exactly one recovery path** — no ambiguity for the user
@@ -187,3 +266,5 @@ case .emergency:
 - Don't hardcode error strings in Feature modules — define them in the error enum's computed properties
 - Don't show alerts for errors — use inline error cards that don't interrupt the user's flow
 - Don't forget to handle `.emergency` classification — always provide crisis resources for self-harm queries
+- Don't let feature modules throw `WythnosError` directly — use local error types conforming to `AppError` and convert at boundaries
+- Don't use string interpolation with user input in error messages without sanitization — this prevents potential log injection

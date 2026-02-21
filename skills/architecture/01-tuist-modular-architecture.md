@@ -118,6 +118,35 @@ let coreTargets: [Target] =
     ], resources: [.glob(pattern: "Modules/Core/DesignSystem/Resources/**")])
 ```
 
+## Edge Cases
+
+- **`featureFramework()` helper:** The document references `featureFramework()` as a companion to `coreFramework()` but doesn't show it. Feature frameworks differ in directory convention (`Modules/Features/{name}/`) and typically include a `resources` parameter for string catalogs:
+  ```swift
+  func featureFramework(
+      name: String,
+      moduleName: String? = nil,
+      dependencies: [TargetDependency] = [],
+      resources: ResourceFileElements? = nil
+  ) -> [Target] {
+      let dirName = moduleName ?? name
+      return [
+          .target(
+              name: name,
+              destinations: destinations,
+              product: .framework,
+              bundleId: "app.myapp.ios.Features.\(name)",
+              deploymentTargets: deploymentTargets,
+              infoPlist: .default,
+              sources: ["Modules/Features/\(dirName)/Sources/**"],
+              resources: resources ?? [.glob(pattern: "Modules/Features/\(dirName)/Resources/**")],
+              dependencies: dependencies
+          )
+      ]
+  }
+  ```
+- **Core vs Feature decision guidance:** A module belongs in Core if it has no UI and could be used by 2+ features. It belongs in Features if it owns a screen or user-facing flow. Services (CalendarService, LLMEngine) are Core; screens (ChatUI, SettingsUI) are Features.
+- **Widget extension target:** Widget targets need special handling — they're `.appExtension` products with their own bundle ID, minimal dependencies, and App Group entitlements. Don't import Feature frameworks into widget targets.
+
 ## Why This Matters
 
 - **No Xcode project file in Git** — Tuist generates it from `Project.swift`, eliminating merge conflicts entirely

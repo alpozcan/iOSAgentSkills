@@ -258,6 +258,26 @@ make build SIMULATOR="iPad Pro 13-inch (M5)"
 
 This works because Make substitutes `$(SIMULATOR)` into the `$(DESTINATION)` string.
 
+## Edge Cases
+
+- **`make lint` target:** Add a SwiftLint target for code quality enforcement:
+  ```makefile
+  .PHONY: lint
+  lint:
+  	@if command -v swiftlint >/dev/null 2>&1; then \
+  		swiftlint lint --quiet; \
+  	else \
+  		echo "⚠️  SwiftLint not installed. Run: brew install swiftlint"; \
+  	fi
+  ```
+- **Error handling in recipes:** Make recipes that pipe through `grep` or `tail` can mask non-zero exit codes from `xcodebuild`. Use `set -o pipefail` in the shell or check `${PIPESTATUS[0]}`:
+  ```makefile
+  SHELL := /bin/bash
+  .SHELLFLAGS := -o pipefail -c
+  ```
+  This ensures `make test` fails when `xcodebuild test` fails, even when piped through `grep`.
+- **Parallel make execution:** Don't use `make -j` with targets that share the same simulator — concurrent `xcrun simctl` commands can corrupt simulator state. Run testing targets sequentially.
+
 ## Why This Matters
 
 - **Single discovery point**: `make` shows everything — no hunting through Scripts/, README, or wiki

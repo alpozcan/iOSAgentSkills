@@ -73,58 +73,87 @@ public protocol Blueprint {
 }
 
 public protocol Assembling: AnyObject {
-    func resolve<Spec: Blueprint>(_ keyPath: KeyPath<Catalog, Spec.Type>) -> B.Output
+    func resolve<Spec: Blueprint>(_ keyPath: KeyPath<Catalog, Spec.Type>) throws -> B.Output
+}
+
+public enum CatalogError: Error, Sendable {
+    case missingEntry(String)
+    case typeMismatch(expected: String, actual: String)
+    case circularReference(chain: [String])
 }
 
 public final class Catalog: Assembling, @unchecked Sendable {
     public static let shared = Catalog()
-    
+
     private let lock = NSLock()
-    private var builders: [ObjectIdentifier: @Sendable (Catalog) -> Any] = [:]
+    private var builders: [ObjectIdentifier: @Sendable (Catalog) throws -> Any] = [:]
     private var sharedInstances: [ObjectIdentifier: Any] = [:]
-    
+    private var assemblyChain: [String] = []  // Circular dependency detection
+
     public func register<Spec: Blueprint>(
         _ specType: Spec.Type,
-        builder: @escaping @Sendable (Catalog) -> B.Output
+        builder: @escaping @Sendable (Catalog) throws -> B.Output
     ) {
         let key = ObjectIdentifier(specType)
         lock.lock()
-        builders[key] = { provider in factory(provider) }
-        lock.unlock()
+        defer { lock.unlock() }
+        builders[key] = { provider in try factory(provider) }
     }
-    
+
     public func supplyShared<Spec: Blueprint>(
         _ specType: Spec.Type,
-        builder: @escaping @Sendable (Catalog) -> B.Output
+        builder: @escaping @Sendable (Catalog) throws -> B.Output
     ) {
         let key = ObjectIdentifier(specType)
         lock.lock()
-        builders[key] = { provider in
-            if let existing = provider.sharedInstances[key] { return existing }
-            let instance = factory(provider)
-            provider.sharedInstances[key] = instance
+        defer { lock.unlock() }
+        builders[key] = { [weak self] provider in
+            guard let self else { throw CatalogError.missingEntry(String(describing: specType)) }
+            // Singleton check + creation inside lock to prevent race conditions
+            if let existing = self.sharedInstances[key] { return existing }
+            let instance = try builder(provider)
+            self.sharedInstances[key] = instance
             return instance
         }
-        lock.unlock()
     }
-    
+
     public func resolve<Spec: Blueprint>(
         _ keyPath: KeyPath<Catalog, Spec.Type>
-    ) -> B.Output {
+    ) throws -> B.Output {
         let specType = self[keyPath: keyPath]
         let key = ObjectIdentifier(specType)
+        let specName = String(describing: specType)
+
         lock.lock()
-        let factory = builders[key]
-        lock.unlock()
-        guard let factory else { fatalError("No factory for \(specType)") }
-        return factory(self) as! B.Output
+        defer { lock.unlock() }
+
+        // Circular dependency detection
+        if assemblyChain.contains(specName) {
+            let chain = assemblyChain + [specName]
+            throw CatalogError.circularReference(chain: chain)
+        }
+        assemblyChain.append(specName)
+        defer { assemblyChain.removeLast() }
+
+        guard let builder = builders[key] else {
+            throw CatalogError.missingEntry(specName)
+        }
+        let instance = try builder(self)
+        guard let typed = instance as? B.Output else {
+            throw CatalogError.typeMismatch(
+                expected: String(describing: B.Output.self),
+                actual: String(describing: type(of: instance))
+            )
+        }
+        return typed
     }
-    
+
     public func reset() {
         lock.lock()
+        defer { lock.unlock() }
         builders.removeAll()
         sharedInstances.removeAll()
-        lock.unlock()
+        assemblyChain.removeAll()
     }
 }
 ```
@@ -133,7 +162,7 @@ public final class Catalog: Assembling, @unchecked Sendable {
 
 **Resolution at call site:**
 ```swift
-let service: CalendarServiceProtocol = Catalog.main[ \.calendarService)
+let service: CalendarServiceProtocol = try Catalog.main[ \.calendarService)
 ```
 
 **Resolution via Blueprint chaining (one service depending on another):**
@@ -188,6 +217,14 @@ struct CatalogTests {
     }
 }
 ```
+
+## Edge Cases
+
+- **Thread contention at startup:** If `prepareAll()` and `resolve()` race, the lock ensures consistency but resolution will throw `missingEntry` until registration completes. Call `prepareAll()` synchronously in `App.init()` before any view resolves services.
+- **Double registration (last-write-wins):** Registering the same spec twice silently overwrites. This is intentional for test overrides but can mask bugs. Add `#if DEBUG` assertions if needed.
+- **Circular dependencies:** A resolves B which resolves A. The `assemblyChain` detects this and throws `circularReference(chain:)` instead of stack overflow.
+- **Missing registration before `prepareAll()` completes:** If a service is resolved before its spec is registered, you get `missingEntry`. Ensure all registrations happen before the first `resolve()` call.
+- **Singleton race condition (fixed above):** The singleton check and creation now happen inside the factory closure while the lock is held, preventing duplicate instance creation under concurrent access.
 
 ## Why This Matters
 

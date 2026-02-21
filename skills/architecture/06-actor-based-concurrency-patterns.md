@@ -203,6 +203,46 @@ public actor CalendarSyncManager {
 }
 ```
 
+### Decision Tree: Which Isolation Pattern?
+
+```
+Is the type a ViewModel?
+  → YES: Use @MainActor (required for @Published + SwiftUI)
+  → NO: Does it have mutable state?
+    → NO: Make it a struct/enum conforming to Sendable
+    → YES: Does it need synchronous access (no await)?
+      → YES: Use @unchecked Sendable + NSLock (e.g., Catalog)
+      → NO: Does it manage a resource with its own queue (CoreData, URLSession)?
+        → YES: Use actor with nonisolated escape hatches
+        → NO: Use actor (default safe choice)
+```
+
+## Edge Cases
+
+- **Actor reentrancy:** When an actor method suspends at an `await` point, another call to the same actor can execute before the first resumes. This can cause unexpected state changes mid-method. Mitigation: capture state into local variables before `await`, then validate state hasn't changed after resuming.
+  ```swift
+  func withdraw(_ amount: Decimal) async throws {
+      let currentBalance = balance  // Capture before await
+      let fee = await feeService.calculateFee(for: amount)
+      guard balance == currentBalance else { throw BankError.stateChanged }
+      guard balance >= amount + fee else { throw BankError.insufficientFunds }
+      balance -= (amount + fee)
+  }
+  ```
+- **Actor deadlock:** Actor A awaits Actor B which awaits Actor A. Swift actors use cooperative threading, so this won't deadlock in the traditional sense — but it can cause unexpected interleaving due to reentrancy. Design unidirectional data flow (A → B, never B → A).
+- **`nonisolated` property access:** Accessing actor properties from `nonisolated` methods requires the property to be `Sendable` and either `let` (immutable) or computed from immutable state. Marking a `var` property as `nonisolated` is a compiler error.
+- **`@unchecked Sendable` abuse:** Classes marked `@unchecked Sendable` without proper locking are time bombs. Every mutable stored property must be guarded by the same lock. Code review rule: grep for `@unchecked Sendable` and verify lock coverage.
+- **MainActor starvation:** Long-running `@MainActor` work blocks UI updates. Offload computation to a detached task or background actor, then hop back to MainActor for UI updates:
+  ```swift
+  @MainActor func loadData() async {
+      isLoading = true
+      let result = await Task.detached { await self.heavyComputation() }.value
+      self.data = result  // Back on MainActor
+      isLoading = false
+  }
+  ```
+- **Task cancellation in actors:** Actor methods should check `Task.isCancelled` during long operations and throw `CancellationError` to support structured concurrency cancellation.
+
 ## Why This Matters
 
 - **Compile-time data race prevention** — Swift actors make race conditions impossible
@@ -217,3 +257,5 @@ public actor CalendarSyncManager {
 - Don't make ViewModels actors — they must be `@MainActor` for `@Published` to work with SwiftUI
 - Don't use `DispatchQueue.main.async` in an actor-based codebase — use `@MainActor.run` or `Task { @MainActor in }`
 - Don't pass mutable reference types across actor boundaries — use value types or `Sendable` types
+- Don't ignore actor reentrancy — always validate state after `await` points if the method depends on pre-await state
+- Don't create bidirectional actor dependencies — design unidirectional data flow to prevent logical deadlocks
