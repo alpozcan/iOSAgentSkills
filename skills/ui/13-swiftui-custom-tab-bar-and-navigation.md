@@ -181,6 +181,13 @@ private var contentView: some View {
 }
 ```
 
+## Edge Cases
+
+- **Dynamic Type truncation:** Tab labels may truncate at larger accessibility text sizes. Use `.minimumScaleFactor(0.8)` on labels and test with `sizeCategory: .accessibilityExtraExtraExtraLarge` in snapshots.
+- **VoiceOver traversal:** Custom tab bars need explicit `.accessibilityElement(children: .contain)` and `.accessibilityLabel()` annotations. Each tab button should have a clear label (e.g., "Chat tab, selected") and `.accessibilityAddTraits(.isSelected)` for the active tab.
+- **State restoration after kill:** When the app is killed and relaunched, the selected tab resets to default. Persist `selectedTab` in `UserDefaults` or `@AppStorage` if tab state should survive app termination.
+- **Re-tap losing unsaved input:** The re-tap mechanism changes the view's `.id()`, which recreates it — discarding any unsaved text in input fields. Show a confirmation dialog or save draft state before resetting.
+
 ## Why This Matters
 
 - **`safeAreaInset`** is the correct API for custom tab bars — it respects keyboard avoidance and safe areas automatically (but beware of [[17-safe-area-inset-stacking-and-bottom-pinned-views|stacking issues]] when nesting insets)

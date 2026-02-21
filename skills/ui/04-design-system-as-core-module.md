@@ -202,6 +202,21 @@ public struct NyxPressableStyle: ButtonStyle {
 5. **OLED optimized** — true black (#000000) as primary background
 6. **Surface hierarchy** — 3-level z-axis: Primary (black) → Secondary (0.07) → Elevated (0.10)
 
+## Edge Cases
+
+- **Accessibility contrast ratios:** `NyxColors.textTertiary` at 0.4 opacity on `surfacePrimary` (black) yields a contrast ratio of ~5.3:1, meeting WCAG AA for normal text. However, `textTertiary` on `surfaceElevated` drops below AA. Audit all color combinations with Accessibility Inspector.
+- **Dynamic Type with `@ScaledMetric`:** The current typography uses fixed `Font.system(size:)` values. For accessibility compliance, wrap sizing values in `@ScaledMetric` or use `.font(.body)` with relative text styles:
+  ```swift
+  @ScaledMetric(relativeTo: .body) var bodySize: CGFloat = 15
+  ```
+- **Reduced motion fallbacks:** Users with "Reduce Motion" enabled (`UIAccessibility.isReduceMotionEnabled` / `@Environment(\.accessibilityReduceMotion)`) should see instant transitions instead of spring animations. Check this in `NyxAnimation`:
+  ```swift
+  public static var spring: Animation {
+      UIAccessibility.isReduceMotionEnabled ? .linear(duration: 0.1) : .spring(response: 0.35, dampingFraction: 0.8)
+  }
+  ```
+- **Token naming convention:** Use semantic names (`textPrimary`, `surfaceElevated`) not visual names (`white95`, `gray10`). This allows future theming without renaming.
+
 ## Why This Matters
 
 - **Compile-time guarantee** — every Feature module imports `DesignSystem` and uses the same tokens

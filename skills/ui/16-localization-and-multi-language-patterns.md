@@ -122,6 +122,13 @@ func turkishIntentClassification() {
 }
 ```
 
+## Edge Cases
+
+- **Turkish dotted I:** `"I".lowercased()` returns `"ı"` (undotted) in Turkish locale but `"i"` (dotted) in English. The `classifyIntent` method uses `.lowercased()` without specifying a locale, which means it uses the device locale. For keyword matching, always use `.lowercased(with: Locale(identifier: "en"))` or compare case-insensitively with `.localizedCaseInsensitiveContains()`.
+- **Partial word matching:** `lower.contains("free")` matches `"freedom"`, `"carefree"`, etc. For more precise matching, use word boundary detection: split on whitespace/punctuation and match whole words, or use `NSRegularExpression` with `\b` word boundaries (but beware ReDoS — keep patterns simple).
+- **Mixed-script queries:** Users may type queries mixing Latin and non-Latin scripts (e.g., "yarın meeting var mı?"). The keyword-based classifier handles this naturally since `contains()` works across scripts. However, stemming and NLP-based approaches may not handle mixed scripts well.
+- **Nil locale fallback:** `locale.language.languageCode?.identifier` returns nil for some edge-case locales. Always fall back to `"en"` as the default language for refusal responses and intent classification.
+
 ## Why This Matters
 
 - **`bundle: .module`** ensures each framework resolves its own string catalog, not the app's

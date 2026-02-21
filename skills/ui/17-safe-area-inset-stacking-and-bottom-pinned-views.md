@@ -223,6 +223,13 @@ This is not a bug — it's how `safeAreaInset` composes. The API is designed for
 - **When you add a custom tab bar via `safeAreaInset`, ALL per-tab bottom chrome must live in the same `safeAreaInset`.** This means the tab bar's `safeAreaInset` block must be aware of per-tab input bars, toolbars, or action sheets.
 - **Test bottom-pinned views with bright debug colors** (`Color.red`, `Color.orange`) to verify visibility before styling — see [[18-ui-testing-regression-and-smoke]] for regression testing these layouts. If a bright-colored view is invisible, the problem is Z-order, not color/contrast.
 
+## Why This Matters
+
+- **`safeAreaInset` stacking is the #1 custom tab bar layout bug** — it silently hides views with no compiler errors or runtime warnings, wasting hours of debugging
+- **Understanding the Z-order model** prevents trial-and-error approaches that never converge on a solution
+- **The single-inset pattern** scales to any number of per-tab bottom chrome elements (input bars, toolbars, action sheets) by composing them in one `VStack`
+- **iPad multitasking:** In Split View and Slide Over, the safe area changes dynamically. Test bottom-pinned views in all multitasking configurations — `safeAreaInset` handles this correctly, but fixed-height assumptions may break when the window width changes.
+
 ## Anti-Patterns
 
 - Don't add `safeAreaInset(edge: .bottom)` inside a view that's already wrapped by another `safeAreaInset(edge: .bottom)` — the inner one will be hidden.
