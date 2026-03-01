@@ -60,6 +60,7 @@ Patterns for integrating Apple system frameworks into modular apps.
 - [[20-fastlane-app-store-connect-publishing]] — end-to-end publishing pipeline: certificates, code signing, notarization, fastlane lanes, dual distribution (App Store + GitHub Releases), localized metadata sync, release automation
 - [[22-github-actions-ci-cd-for-ios]] — complete CI/CD pipeline with PR testing, snapshot validation across locale/device matrix, archive builds with fastlane match, and App Store submission
 - [[23-app-clips-and-shared-extensions-modular-architecture]] — App Clips, Share Extensions, and Notification Content Extensions as separate Tuist targets with filtered Core dependencies and binary size optimization
+- [[30-github-org-profile-and-website]] — GitHub org profile README with screenshots, static dark-theme marketing website on GitHub Pages, custom domain DNS setup (Namecheap), SSL enforcement, and deployment checklist
 
 **MOC:** [[platform-frameworks-moc]]
 
