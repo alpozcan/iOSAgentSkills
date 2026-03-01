@@ -32,6 +32,7 @@ Design system infrastructure and navigation patterns for SwiftUI apps.
 - [[16-localization-and-multi-language-patterns]] — 43 languages with per-module string catalogs, bilingual AI intent classification, locale-aware safety responses
 - [[17-safe-area-inset-stacking-and-bottom-pinned-views]] — why nested `safeAreaInset` fails and how to fix it. The five approaches that don't work and the one that does
 - [[21-accessibility-voiceover-dynamic-type-patterns]] — VoiceOver traversal order, Dynamic Type with @ScaledMetric, reduced motion fallbacks, WCAG color contrast audits, and automated accessibility testing
+- [[31-in-app-safari-for-external-links]] — always open external URLs inside the app via SFSafariViewController. Reusable SwiftUI wrapper, URL Identifiable conformance, design system tint integration
 
 **MOC:** [[ui-moc]]
 
@@ -61,6 +62,7 @@ Patterns for integrating Apple system frameworks into modular apps.
 - [[22-github-actions-ci-cd-for-ios]] — complete CI/CD pipeline with PR testing, snapshot validation across locale/device matrix, archive builds with fastlane match, and App Store submission
 - [[23-app-clips-and-shared-extensions-modular-architecture]] — App Clips, Share Extensions, and Notification Content Extensions as separate Tuist targets with filtered Core dependencies and binary size optimization
 - [[30-github-org-profile-and-website]] — GitHub org profile README with screenshots, static dark-theme marketing website on GitHub Pages, custom domain DNS setup (Namecheap), SSL enforcement, and deployment checklist
+- [[32-sentry-telemetrydeck-integration]] — Sentry crash reporting (programmatic project creation via REST API) and TelemetryDeck anonymous analytics. SDK setup, typed events, secrets management, App Store privacy labels and data collection questionnaire
 
 **MOC:** [[platform-frameworks-moc]]
 
