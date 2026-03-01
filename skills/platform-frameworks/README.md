@@ -18,6 +18,8 @@ Three skills form a data pipeline that feeds the rest of the app:
 
 [[20-fastlane-app-store-connect-publishing]] covers the complete publishing pipeline: certificate management (Development, Distribution, Developer ID), App Store Connect API key authentication, fastlane lanes for build/upload/metadata/release, xcodebuild archive workflows, notarization, dual distribution to App Store and GitHub Releases, and one-command release workflows via Makefile targets from [[18-makefile-for-ios-project-workflows]].
 
+[[33-app-store-optimization-aso-strategy]] covers the full ASO pipeline once the app is ready for submission: keyword strategy with the 30-30-100 rule and cross-locale multiplier, fastlane screenshot automation, app preview video generation, review prompt optimization, in-app events, Custom Product Pages, WidgetKit retention, local notifications, A/B testing, App Clip + Spotlight indexing, and D1/D7/D30 retention analytics.
+
 ## How They Connect
 
 ```
@@ -31,4 +33,6 @@ Three skills form a data pipeline that feeds the rest of the app:
 08 On-Device LLM (query limits gate access)
 
 20 Fastlane Publishing (certificates, App Store, GitHub Releases)
+
+33 ASO Strategy (keywords, screenshots, retention, A/B testing)
 ```

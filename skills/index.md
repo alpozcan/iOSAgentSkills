@@ -63,6 +63,7 @@ Patterns for integrating Apple system frameworks into modular apps.
 - [[23-app-clips-and-shared-extensions-modular-architecture]] — App Clips, Share Extensions, and Notification Content Extensions as separate Tuist targets with filtered Core dependencies and binary size optimization
 - [[30-github-org-profile-and-website]] — GitHub org profile README with screenshots, static dark-theme marketing website on GitHub Pages, custom domain DNS setup (Namecheap), SSL enforcement, and deployment checklist
 - [[32-sentry-telemetrydeck-integration]] — Sentry crash reporting (programmatic project creation via REST API) and TelemetryDeck anonymous analytics. SDK setup, typed events, secrets management, App Store privacy labels and data collection questionnaire
+- [[33-app-store-optimization-aso-strategy]] — complete ASO pipeline: keyword strategy (30-30-100 rule, cross-locale multiplier), screenshot automation, app preview video, review prompts, in-app events, Custom Product Pages, WidgetKit retention, notifications, A/B testing, App Clips + Spotlight, and retention analytics
 
 **MOC:** [[platform-frameworks-moc]]
 
