@@ -101,7 +101,7 @@ let launchSignposter = OSSignposter(subsystem: "com.app", category: "launch")
 
 // Phase 1: Pre-main (measured by MetricKit automatically)
 
-// Phase 2: catalog preparation
+// Phase 2: Catalog preparation
 let diState = launchSignposter.beginInterval("Catalog Preparation")
 Catalog.main.prepareAll()
 launchSignposter.endInterval("Catalog Preparation", diState)
@@ -115,7 +115,7 @@ launchSignposter.endInterval("First Frame", uiState)
 Target budgets:
 - **Warm launch:** < 400ms to first frame
 - **Cold launch:** < 2s to first frame
-- **catalog preparation:** < 50ms (lazy-register heavy services)
+- **Catalog preparation:** < 50ms (lazy-register heavy services)
 
 If catalog preparation grows beyond budget, switch to lazy registration — see [[06-actor-based-concurrency-patterns]] for actor-based lazy initialization that is safe across threads.
 

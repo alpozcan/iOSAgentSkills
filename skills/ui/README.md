@@ -16,11 +16,16 @@ That creates a specific layout challenge documented in [[17-safe-area-inset-stac
 
 [[16-localization-and-multi-language-patterns]] handles 43 languages through per-module string catalogs with `bundle: .module`. It goes beyond string translation into bilingual AI intent classification (English + Turkish keyword sets) and locale-aware safety refusal responses. The strategic language matrix here feeds directly into [[17-snapshot-testing-with-swift-snapshot-testing]] where 5 representative locales (en, ar, de, ja, tr) are tested for visual regressions.
 
+## In-App Browsing
+
+[[31-in-app-safari-for-external-links]] enforces a project-wide rule: every external URL opens inside an `SFSafariViewController` rather than ejecting the user to Safari. The skill provides a reusable `SafariView` SwiftUI wrapper, a `URL: Identifiable` conformance for `item:`-based presentation, and toolbar tinting that uses tokens from [[04-design-system-as-core-module]].
+
 ## How They Connect
 
 ```
 04 Design System (tokens, components, haptics)
  ├── 13 Custom Tab Bar (uses tokens, haptics, animations)
  │    └── 17 Safe Area Stacking (solves layout problems from 13)
- └── 16 Localization (language-agnostic tokens, locale-aware content)
+ ├── 16 Localization (language-agnostic tokens, locale-aware content)
+ └── 31 In-App Safari (tint colors from tokens, fullScreenCover presentation)
 ```

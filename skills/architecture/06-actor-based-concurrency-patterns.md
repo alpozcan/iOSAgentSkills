@@ -60,7 +60,7 @@ public actor AnalyticsService: AnalyticsServiceProtocol {
 }
 ```
 
-**Use `@MainActor` for ViewModels** (created by [[03-ui-composer-pattern-for-feature-modules|UIFactories]]):
+**Use `@MainActor` for ViewModels** (created by [[03-ui-composer-pattern-for-feature-modules|UIComposers]]):
 ```swift
 @MainActor
 public final class ChatViewModel: ObservableObject {
@@ -83,10 +83,10 @@ public final class ChatViewModel: ObservableObject {
 public final class Catalog: Assembling, @unchecked Sendable {
     private let lock = NSLock()
     private var builders: [ObjectIdentifier: AnyFactory] = [:]
-    
-    public func register<Spec>(_ specType: Spec.Type, factory: @escaping (Catalog) -> B.Output) {
+
+    public func supply<Spec>(_ specType: Spec.Type, factory: @escaping (Catalog) -> B.Output) {
         lock.lock()
-        factories[ObjectIdentifier(specType)] = factory
+        builders[ObjectIdentifier(specType)] = factory
         lock.unlock()
     }
 }
@@ -247,7 +247,7 @@ Is the type a ViewModel?
 
 - **Compile-time data race prevention** — Swift actors make race conditions impossible
 - **`nonisolated` + `Task`** pattern lets you return synchronous types (like `AsyncThrowingStream`) while deferring actor work
-- **`@unchecked Sendable` with `NSLock`** is the right choice for catalogs that need synchronous access without `await`
+- **`@unchecked Sendable` with `NSLock`** is the right choice for service catalogs that need synchronous access without `await`
 - **All cross-boundary data is `Sendable`** — no accidental reference sharing
 
 ## Anti-Patterns

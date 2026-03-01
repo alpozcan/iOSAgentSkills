@@ -4,11 +4,11 @@ The structural backbone of a modular iOS app. These skills define how code is or
 
 ## The Module Foundation
 
-Everything starts with [[01-tuist-modular-architecture]]. It defines the two-layer module hierarchy — Core frameworks that own protocols and domain logic, Feature frameworks that depend on Core and expose UI through factories. The App target sits at the top as the composition root where all dependencies are wired together.
+Everything starts with [[01-tuist-modular-architecture]]. It defines the two-layer module hierarchy — Core frameworks that own protocols and domain logic, Feature frameworks that depend on Core and expose UI through composers. The App target sits at the top as the composition root where all dependencies are wired together.
 
-That wiring happens through [[02-protocol-driven-service-catalog]], a ~80-line catalog that uses `KeyPath`-based resolution and `NSLock` for thread safety. Each Core module declares a protocol, each Feature module declares a `Blueprint` factory, and the App target registers everything at launch.
+That wiring happens through [[02-protocol-driven-service-catalog]], a ~80-line service catalog that uses `KeyPath`-based resolution and `NSLock` for thread safety. Each Core module declares a protocol, each Feature module declares a `Blueprint` factory, and the App target registers everything at launch.
 
-Feature modules expose their UI through [[03-ui-composer-pattern-for-feature-modules]]. A factory accepts pre-resolved protocol dependencies via constructor injection and produces concrete SwiftUI Views — no `AnyView`, no service locator calls from inside Views. This is the public API boundary of every Feature module.
+Feature modules expose their UI through [[03-ui-composer-pattern-for-feature-modules]]. A composer accepts pre-resolved protocol dependencies via constructor injection and produces concrete SwiftUI Views — no `AnyView`, no service locator calls from inside Views. This is the public API boundary of every Feature module.
 
 ## Concurrency & Safety
 

@@ -13,9 +13,9 @@ This is the entry point for the iOS Agent Skills graph. Every node is a self-con
 
 The structural backbone. These skills define how code is organized, how dependencies flow between modules, and how concurrency is managed across the app.
 
-- [[01-tuist-modular-architecture]] — the module hierarchy that everything else builds on. Core modules own protocols, Feature modules expose factories, the App target is the composition root
-- [[02-protocol-driven-service-catalog]] — a ~80-line catalog with no third-party dependencies. Thread-safe resolution via `NSLock`, `KeyPath`-based type lookups, and clean `reset()` for test isolation
-- [[03-ui-composer-pattern-for-feature-modules]] — how Feature modules expose Views without leaking their internals. Factories accept protocols, construct ViewModels, return concrete types
+- [[01-tuist-modular-architecture]] — the module hierarchy that everything else builds on. Core modules own protocols, Feature modules expose composers, the App target is the composition root
+- [[02-protocol-driven-service-catalog]] — a ~80-line service catalog with no third-party dependencies. Thread-safe resolution via `NSLock`, `KeyPath`-based type lookups, and clean `clear()` for test isolation
+- [[03-ui-composer-pattern-for-feature-modules]] — how Feature modules expose Views without leaking their internals. Composers accept protocols, construct ViewModels, return concrete types
 - [[06-actor-based-concurrency-patterns]] — when to use `actor` vs `@MainActor` vs `@unchecked Sendable`. The concurrency rules that every service and ViewModel must follow
 - [[14-error-handling-and-typed-error-system]] — typed errors with recovery actions, safety classification for AI responses, and localized refusal handling
 - [[18-makefile-for-ios-project-workflows]] — the single entry point for every project workflow: build, test, run, snapshot, and App Store submission

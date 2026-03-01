@@ -46,13 +46,13 @@ struct MainTabView: View {
     private var tabContent: some View {
         switch selectedTab {
         case .insights:
-            Catalog.main[ \.insightsUI).composeInsightsView()
+            Catalog.main[\.insightsUI].composeInsightsView()
                 .id("insights_\(tabReTapTrigger?.uuidString ?? "")")
         case .chat:
-            Catalog.main[ \.chatUI).composeChatView()
+            Catalog.main[\.chatUI].composeChatView()
                 .id("chat_\(tabReTapTrigger?.uuidString ?? "")")
         case .settings:
-            Catalog.main[ \.settingsUI).composeSettingsView()
+            Catalog.main[\.settingsUI].composeSettingsView()
                 .id("settings_\(tabReTapTrigger?.uuidString ?? "")")
         }
     }
@@ -173,7 +173,7 @@ private var contentView: some View {
     if hasCompletedOnboarding {
         MainTabView().environmentObject(deepLinkRouter)
     } else {
-        Catalog.main[ \.onboardingUI)
+        Catalog.main[\.onboardingUI]
             .composeOnboardingView {
                 withAnimation(.easeInOut(duration: 0.5)) { hasCompletedOnboarding = true }
             }

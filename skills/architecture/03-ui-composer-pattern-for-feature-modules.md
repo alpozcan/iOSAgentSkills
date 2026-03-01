@@ -6,22 +6,22 @@ description: "Feature modules expose a single UIComposer that accepts protocol d
 # UI Composer Pattern for Feature Module Composition
 
 ## Context
-In a [[01-tuist-modular-architecture|modular iOS app]], Feature modules need to construct Views with ViewModels that depend on multiple Core services. The Feature module cannot access the catalog directly (that would create a circular dependency), and Views should not know about service resolution.
+In a [[01-tuist-modular-architecture|modular iOS app]], Feature modules need to construct Views with ViewModels that depend on multiple Core services. The Feature module cannot access the catalog directly (that would create a circular dependency), and Views should not know about service obtainment.
 
 ## Pattern
 
-Each Feature module exposes a **UIFactory** that accepts pre-resolved dependencies via constructor injection, and provides a `compose*View()` method that constructs the full View + ViewModel stack.
+Each Feature module exposes a **UIComposer** that accepts pre-obtained dependencies via constructor injection, and provides a `compose*View()` method that constructs the full View + ViewModel stack.
 
 ### Three-Part Feature Module Structure
 
-**1. The Spec ([[02-protocol-driven-service-catalog|DI integration point]])**
+**1. The Blueprint ([[02-protocol-driven-service-catalog|catalog integration point]])**
 ```swift
 // Chat/Sources/ChatUIComposer.swift
 public struct ChatUIBlueprint: Blueprint {
-    public typealias Output =ChatUIComposer
+    public typealias Output = ChatUIComposer
     public init() {}
-    
-    public static func assemble(from: Assembling) -> ChatUIComposer {
+
+    public static func assemble(from catalog: Assembling) -> ChatUIComposer {
         ChatUIComposer(
             store: catalog.obtain(\.calendarStore),
             llmEngine: catalog.obtain(\.llmEngine),
@@ -36,7 +36,7 @@ extension Catalog {
 }
 ```
 
-**2. The Factory (dependencies → View)**
+**2. The Composer (dependencies → View)**
 ```swift
 public struct ChatUIComposer {
     private let store: CalendarStoreProtocol
@@ -72,12 +72,12 @@ public struct ChatUIComposer {
 ```swift
 // MainTabView.swift
 case .chat:
-    Catalog.main[ \.chatUI).composeChatView()
+    Catalog.main[\.chatUI].composeChatView()
 ```
 
-### Factory Variations
+### Composer Variations
 
-**Factory with callback parameter (onboarding):**
+**Composer with callback parameter (onboarding):**
 ```swift
 public struct OnboardingUIComposer {
     private let calendarService: CalendarServiceProtocol
@@ -97,12 +97,12 @@ public struct OnboardingUIComposer {
 }
 ```
 
-**Factory with runtime data (insights with user name):**
+**Composer with runtime data (insights with user name):**
 ```swift
 public struct InsightsUIComposer {
     private let store: CalendarStoreProtocol
     private let llmEngine: LLMEngineProtocol
-    private let userName: String?  // Resolved at spec creation time
+    private let userName: String?  // Obtained at blueprint assembly time
 
     @MainActor
     public func composeInsightsView() -> InsightsView {
@@ -144,23 +144,23 @@ public final class ChatViewModel: ObservableObject {
 }
 ```
 
-### Split Factory Pattern (SRP for Large Features)
+### Split Composer Pattern (SRP for Large Features)
 
-When a feature has many screens (5+), split the factory into sub-factories:
+When a feature has many screens (5+), split the composer into sub-composers:
 
 ```swift
 public struct ChatUIComposer {
-    // Sub-factories for distinct flows within Chat
-    public let conversationFactory: ConversationSubComposer
-    public let historyFactory: HistorySubComposer
+    // Sub-composers for distinct flows within Chat
+    public let conversationComposer: ConversationSubComposer
+    public let historyComposer: HistorySubComposer
 
     public init(store: CalendarStoreProtocol, llmEngine: LLMEngineProtocol, ...) {
-        self.conversationFactory = ConversationSubComposer(store: store, llmEngine: llmEngine)
-        self.historyFactory = HistorySubComposer(store: store)
+        self.conversationComposer = ConversationSubComposer(store: store, llmEngine: llmEngine)
+        self.historyComposer = HistorySubComposer(store: store)
     }
 }
 
-// Each sub-factory owns its own screen construction
+// Each sub-composer owns its own screen construction
 public struct ConversationSubComposer {
     private let store: CalendarStoreProtocol
     private let llmEngine: LLMEngineProtocol
@@ -173,28 +173,28 @@ public struct ConversationSubComposer {
 }
 ```
 
-**Rule:** Callbacks (navigation, completion) go in `compose*()` parameters. Dependencies (services, stores) go in the factory constructor. This keeps the factory's constructor stable while allowing per-screen customization.
+**Rule:** Callbacks (navigation, completion) go in `compose*()` parameters. Dependencies (services, stores) go in the composer constructor. This keeps the composer's constructor stable while allowing per-screen customization.
 
 ## Edge Cases
 
-- **Stale dependencies after factory creation:** If a factory is created during `prepareAll()` and a dependency is later replaced (e.g., mock override in tests), the factory still holds the old reference. Mitigation: create factories lazily at call sites, not eagerly at registration.
-- **Thread safety:** Factories are created during service registration (any thread) but `makeView()` must run on `@MainActor`. The `@MainActor` annotation on `compose*View()` methods enforces this at compile time.
-- **Memory leaks from retained closures:** Callbacks passed to `make*View(onComplete:)` can retain the calling ViewModel, creating retain cycles. Use `[weak self]` in callbacks or make factories value types (structs) so they don't participate in cycles.
-- **Factory explosion:** Don't create a factory for every screen — only for feature entry points. Internal navigation within a feature can use standard SwiftUI `NavigationStack` without factories.
+- **Stale dependencies after composer creation:** If a composer is created during `prepareAll()` and a dependency is later replaced (e.g., stub override in tests), the composer still holds the old reference. Mitigation: create composers lazily at call sites, not eagerly at preparation.
+- **Thread safety:** Composers are created during service preparation (any thread) but `composeView()` must run on `@MainActor`. The `@MainActor` annotation on `compose*View()` methods enforces this at compile time.
+- **Memory leaks from retained closures:** Callbacks passed to `compose*View(onComplete:)` can retain the calling ViewModel, creating retain cycles. Use `[weak self]` in callbacks or make composers value types (structs) so they don't participate in cycles.
+- **Composer explosion:** Don't create a composer for every screen — only for feature entry points. Internal navigation within a feature can use standard SwiftUI `NavigationStack` without composers.
 
 ## Why This Matters
 
 - **Feature modules are self-contained** — they expose a single `UIComposer` and nothing else
 - **No service locator calls inside Views or ViewModels** — all dependencies are constructor-injected
 - **[[06-actor-based-concurrency-patterns|`@MainActor`]] on `compose*View()`** ensures Views are created on the main thread
-- **Testable** — create a `ChatUIComposer` with mock services directly, no catalog needed
+- **Testable** — create a `ChatUIComposer` with stub services directly, no catalog needed
 - **Views are concrete types** (not `AnyView`) — better SwiftUI performance and type safety
 
 ## Anti-Patterns
 
-- Don't pass `Catalog` into ViewModels — inject resolved protocols instead
+- Don't pass `Catalog` into ViewModels — inject obtained protocols instead
 - Don't use `@EnvironmentObject` for core service dependencies — it's invisible and crashes at runtime if missing
-- Don't create ViewModels inside Views — the Factory creates the ViewModel and passes it to the View
-- Don't return `AnyView` from factories unless absolutely necessary (e.g., conditional views) — prefer concrete types
-- Don't eagerly create all factories at registration time — create them lazily to avoid stale dependency references
-- Don't put navigation logic inside factories — factories create views, navigation coordinators handle flow
+- Don't create ViewModels inside Views — the Composer creates the ViewModel and passes it to the View
+- Don't return `AnyView` from composers unless absolutely necessary (e.g., conditional views) — prefer concrete types
+- Don't eagerly create all composers at preparation time — create them lazily to avoid stale dependency references
+- Don't put navigation logic inside composers — composers create views, navigation coordinators handle flow

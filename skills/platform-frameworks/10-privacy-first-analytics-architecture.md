@@ -126,9 +126,9 @@ public struct BundleAnalyticsConfiguration: AnalyticsConfiguration, Sendable {
 }
 
 public struct AnalyticsServiceBlueprint: Blueprint {
-    public typealias Output =AnalyticsServiceProtocol
+    public typealias Output = AnalyticsServiceProtocol
 
-    public static func assemble(from: Assembling) -> AnalyticsServiceProtocol {
+    public static func assemble(from catalog: Assembling) -> AnalyticsServiceProtocol {
         let config: AnalyticsConfiguration = BundleAnalyticsConfiguration()
         var backends: [AnalyticsBackend] = [OSLogAnalyticsBackend()]
 
