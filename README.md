@@ -16,7 +16,7 @@ These skills were extracted from building a production iOS app with 10+ Tuist mo
 
 ## What's Inside
 
-**18 skills** organized across **5 categories**, covering everything from build system configuration to on-device AI safety guardrails.
+**19 skills** organized across **5 categories**, covering everything from build system configuration to on-device AI safety guardrails.
 
 ### 🏗️ [Architecture](skills/architecture/) — 6 skills
 
@@ -26,7 +26,7 @@ The structural backbone of a modular iOS app. These skills define how code is or
 |---|-------|-------------------|
 | 01 | [Tuist-Based Modular Architecture](skills/architecture/01-tuist-modular-architecture.md) | How to define a `Project.swift` with Core/Feature module layers, enforce strict dependency boundaries at compile time, eliminate Xcode project merge conflicts, and structure a directory convention that scales to 10+ modules. Includes helper functions for `coreFramework()` and `featureFramework()` with automatic test target generation. |
 | 02 | [Protocol-Driven Service Catalog](skills/architecture/02-protocol-driven-service-catalog.md) | A complete service catalog in ~80 lines of Swift — no third-party frameworks. Three-layer architecture: Protocol (module-owned), Blueprint (factory), and Registration (composition root). Thread-safe resolution via `NSLock`, `KeyPath`-based type-safe lookups, shared vs. transient registration, and clean `reset()` for test isolation. |
-| 03 | [UI Composer Pattern for Feature Modules](skills/architecture/03-ui-composer-pattern-for-feature-modules.md) | How Feature modules expose a single `UIComposer` that accepts pre-resolved dependencies via constructor injection and produces concrete SwiftUI Views (no `AnyView`). Covers factory variations for callbacks, runtime data, and the ViewModel-as-dependency-hub pattern. Eliminates service locator calls from Views entirely. |
+| 03 | [UI Composer Pattern for Feature Modules](skills/architecture/03-ui-composer-pattern-for-feature-modules.md) | How Feature modules expose a single `UIComposer` that accepts pre-resolved dependencies via constructor injection and produces concrete SwiftUI Views (no `AnyView`). Covers `compose*View()` variations for callbacks, runtime data, and the ViewModel-as-dependency-hub pattern. Eliminates service locator calls from Views entirely. |
 | 06 | [Actor-Based Concurrency Patterns](skills/architecture/06-actor-based-concurrency-patterns.md) | When to use `actor` vs `@MainActor` vs `@unchecked Sendable` with `NSLock`. Covers actor-isolated data stores (CoreData), `nonisolated` escape hatches for `AsyncThrowingStream`, actor-to-actor communication chains, `Sendable` value-type domain models, and app lifecycle integration. Prevents data races at compile time. |
 | 14 | [Typed Error System with Recovery Actions](skills/architecture/14-error-handling-and-typed-error-system.md) | A `WythnosError` enum where every case maps to a title, message, SF Symbol icon, and `RecoveryAction` — rendered through a reusable `NyxErrorCard` design system component. Includes AI safety classification (`SafetyClassification`), localized refusal responses in English and Turkish, and emergency crisis resource handling. |
 | 18 | [Makefile for iOS Project Workflows](skills/architecture/18-makefile-for-ios-project-workflows.md) | A self-documenting Makefile as the single entry point for every project workflow: Tuist lifecycle (`make setup`), multiple launch modes (`make run`, `make free`, `make fresh`, `make dev-mode`), unit and snapshot testing (`make test`, `make snapshots`, per-module `make snapshots-design`), snapshot recording (`make snapshots-record`), simulator management, and log streaming. Covers `CODE_SIGNING_ALLOWED=NO` for agents/CI, `_ensure-workspace` auto-generation, `define` functions for app discovery/launch, and `SIMULATOR=` override for targeting any device. |
@@ -52,10 +52,12 @@ Quality assurance patterns that keep modular apps reliable across CI, simulators
 | 09 | [Debug Modes & Mock Services](skills/testing-and-debugging/09-debug-modes-and-mock-service-strategy.md) | A three-tier mock system: Tier 1 (UI testing — minimal, fixed data), Tier 2 (rich debug — 30 days of realistic calendar patterns with Pro access), and Tier 3 (developer mode — secret gesture activation with SHA256-hashed codes for QA testers without Xcode). Shows how to override `Catalog` registrations via launch arguments (`--uitesting`, `--pro-debug`) and re-supply dependent services for graph consistency. |
 | 17 | [Snapshot Testing with swift-snapshot-testing](skills/testing-and-debugging/17-snapshot-testing-with-swift-snapshot-testing.md) | Per-module visual regression testing using Point-Free's swift-snapshot-testing in a Tuist modular app. Covers strategic language selection (5 of 43 locales: en, ar/RTL, de/long words, ja/CJK, tr), device matrix (SE/Pro/Pro Max), `SnapshotTestSupport` static framework with `ENABLE_TESTING_SEARCH_PATHS`, component-level and full-screen assertions, deterministic mock factories, recording vs verification modes, CI pipeline configuration, and precision tolerance for cross-platform rendering. |
 | 18 | [UI Testing for Regression & Smoke Testing](skills/testing-and-debugging/18-ui-testing-regression-and-smoke.md) | Comprehensive XCUITest suite for critical user journeys. Covers test base class with launch arguments (`--uitesting`, `--skip-onboarding`), accessibility identifier conventions, tab navigation tests, chat flow (send message, feedback buttons), chat history (open, select session, new chat), settings (name field, privacy links, web views, feedback button), keyboard behavior (show/dismiss, tab switch), CI integration, Makefile targets, and handling flaky tests with `waitForExistence` and predicates. |
+| 25 | [Performance Monitoring & Profiling Patterns](skills/testing-and-debugging/25-performance-monitoring-and-profiling-patterns.md) | MetricKit integration for crash/hang metrics and diagnostic payloads, `OSSignposter` for custom interval measurement (LLM inference, calendar sync), launch time profiling in three phases (pre-main, catalog registration, first frame), memory pressure tests with `mach_task_basic_info` for 10K-event sync validation, privacy-aware metric reporting (typed `PerformanceMetric` struct, no PII), and Tuist generation time profiling at scale. |
+| 26 | [Structured Logging & Log Levels](skills/testing-and-debugging/26-structured-logging-and-log-levels.md) | Per-module `os.Logger` configuration with subsystem/category organization mirroring Tuist module boundaries, strict log level discipline (debug/info/notice/error/fault decision tree), privacy annotations for PII protection (`privacy: .private`, `.private(mask: .hash)`), log forging prevention for user-controlled strings, `OSLogStore` for in-app log retrieval in debug builds, Console.app and `log` CLI filtering commands, Makefile target integration, and Sendable-safe logging in actors. |
 
-### 📱 [Platform Frameworks](skills/platform-frameworks/) — 5 skills
+### 📱 [Platform Frameworks](skills/platform-frameworks/) — 6 skills
 
-Patterns for integrating Apple system frameworks (StoreKit, EventKit, WidgetKit, UNUserNotificationCenter) into modular apps.
+Patterns for integrating Apple system frameworks (StoreKit, EventKit, WidgetKit, UNUserNotificationCenter) into modular apps, plus App Store publishing and direct distribution pipelines.
 
 | # | Skill | What You'll Learn |
 |---|-------|-------------------|
@@ -64,6 +66,7 @@ Patterns for integrating Apple system frameworks (StoreKit, EventKit, WidgetKit,
 | 11 | [Notification Service with Deep Linking](skills/platform-frameworks/11-notification-service-with-deep-linking.md) | An actor-based notification service that schedules LLM-generated local notifications (weekly summaries, meeting reminders, insight milestones). Deep linking to native video call apps (Zoom, Meet, Teams, Webex — 11 platforms) by extracting URLs from event locations and converting to native URL schemes. Covers engagement-gated permission requests, smart meeting importance scoring, and `NotificationPreferences` with `Codable` persistence. |
 | 12 | [EventKit–CoreData Sync Architecture](skills/platform-frameworks/12-eventkit-coredata-sync-architecture.md) | A three-layer sync pipeline: `CalendarService` (EventKit abstraction) → `CalendarSyncManager` (orchestrator actor) → `CalendarStore` (CoreData actor). Covers programmatic CoreData model creation (no `.xcdatamodeld` — better for Tuist framework targets), upsert by ID, `NSMergeByPropertyObjectTrumpMergePolicy`, full sync (90 days back + 7 forward), incremental sync from last sync date, `Sendable` value-type domain models, and `inMemory: true` for fast tests. |
 | 15 | [WidgetKit & App Intents Integration](skills/platform-frameworks/15-widgetkit-and-app-intents-integration.md) | Lightweight Home Screen widgets as a separate Tuist target with no framework dependencies. Covers `TimelineProvider` with placeholder/snapshot/timeline, multi-size widget views (`systemSmall` + `systemMedium`), `containerBackground(.black, for: .widget)` (iOS 17+), `AppIntent` for Siri Shortcuts, data sharing via App Groups, and 15-minute refresh cadence for battery efficiency. |
+| 20 | [App Store Connect Publishing Pipeline](skills/platform-frameworks/20-fastlane-app-store-connect-publishing.md) | End-to-end publishing pipeline: certificate creation (Development, Distribution, Developer ID), App Store Connect API key auth, fastlane lanes (create_app, build, upload, metadata, release) for iOS and macOS, xcodebuild archive workflows, ExportOptions plist, Developer ID direct distribution with notarization, GitHub Releases, entitlements management, Makefile integration for App Store and direct distribution targets, and a first-time setup script. |
 
 ### 🤖 [AI & Intelligence](skills/ai-and-intelligence/) — 1 skill
 
@@ -175,13 +178,14 @@ iOSAgentSkills/
     │   ├── 17-snapshot-testing-with-swift-snapshot-testing.md
     │   └── 18-ui-testing-regression-and-smoke.md
     │
-    ├── platform-frameworks/               ← 5 skills
+    ├── platform-frameworks/               ← 6 skills
     │   ├── README.md
     │   ├── 07-storekit2-intelligence-based-trial.md
     │   ├── 10-privacy-first-analytics-architecture.md
     │   ├── 11-notification-service-with-deep-linking.md
     │   ├── 12-eventkit-coredata-sync-architecture.md
-    │   └── 15-widgetkit-and-app-intents-integration.md
+    │   ├── 15-widgetkit-and-app-intents-integration.md
+    │   └── 20-fastlane-app-store-connect-publishing.md
     │
     └── ai-and-intelligence/               ← 1 skill
         ├── README.md

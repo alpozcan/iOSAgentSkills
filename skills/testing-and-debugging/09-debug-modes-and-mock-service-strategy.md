@@ -114,16 +114,16 @@ public final class DeveloperModeActivator: ObservableObject {
 }
 ```
 
-### Registration Flow in App Entry Point
+### Supply Flow in App Entry Point
 
 ```swift
 @main
 struct MyApp: App {
     init() {
-        // 1. Register all production services
+        // 1. Prepare all production services
         Catalog.main.prepareAll()
         
-        // 2. Override with mocks based on mode
+        // 2. Override with stubs based on mode
         if isUITesting {
             Catalog.main.supply(LLMEngineBlueprint.self) { _ in StubLLMEngine() }
             Catalog.main.supply(CalendarStoreBlueprint.self) { _ in StubCalendarStore() }
@@ -180,18 +180,31 @@ if isUITesting || isProDebug {
 }
 ```
 
+## Edge Cases
+
+- **Launch arguments in release builds:** `ProcessInfo.processInfo.arguments` is accessible in release builds too. A user could inject `--uitesting` via URL scheme or MDM profile. Gate stub service registration behind `#if DEBUG`:
+  ```swift
+  #if DEBUG
+  if isUITesting { /* supply stubs */ }
+  #endif
+  ```
+- **Developer mode code brute force:** The SHA256-validated developer code has no rate limiting. Add a delay (e.g., 2 seconds) after each failed attempt and lock out after 10 failures to prevent brute force.
+- **`removePersistentDomain` clearing user data:** The clean state pattern `UserDefaults.standard.removePersistentDomain(forName: bundleId)` removes ALL user preferences — including onboarding completion, notification preferences, and trial state. This is intentional for UI testing but catastrophic if accidentally triggered in production. Always guard with `#if DEBUG`.
+- **Mock data determinism:** `responses.randomElement()!` in `PreviewLLMEngine` makes debug sessions non-reproducible. For bug reports, seed the random generator or use indexed cycling instead.
+
+
 ## Why This Matters
 
 - **UI tests are deterministic** — fixed mock data means no flaky tests from calendar permissions or StoreKit sandbox
 - **Developer mode** enables QA testers to see Pro features without Xcode or TestFlight
 - **Rich mocks** provide 30 days of realistic patterns — essential for testing AI insights, pattern discovery
 - **Clean state on launch** prevents test pollution from previous runs
-- **Re-supplying of dependent services** ensures the mock graph is consistent (e.g., `CalendarSyncManager` uses the mocked store, not the real one)
+- **Re-supplying dependent services** ensures the service graph is consistent (e.g., `CalendarSyncManager` uses the stubbed store, not the real one)
 
 ## Anti-Patterns
 
-- Don't leave mock code in production paths — stubs are only supplied when debug flags are present
+- Don't leave stub code in production paths — stubs are only supplied when debug flags are present
 - Don't use `#if DEBUG` for mock selection — use launch arguments so the same binary works in all modes
 - Don't skip re-supplying dependent services after overriding their dependencies
 - Don't hardcode the developer code — hash it and store the hash in a `.gitignore`d file
-- Don't use mock services for unit tests — inject mocks directly via constructor
+- Don't use stub services for unit tests — inject stubs directly via constructor (see [[05-swift-testing-and-tdd-patterns]] for unit test patterns and [[17-snapshot-testing-with-swift-snapshot-testing]] for snapshot stub factories)

@@ -144,9 +144,9 @@ final class ChatInputState: ObservableObject {
 }
 ```
 
-### ✅ Alternative: Expose input bar via ChatView's factory
+### ✅ Alternative: Expose input bar via ChatView's composer
 
-If lifting state feels too invasive, the ChatView factory can return both the view and the input bar as separate components:
+If lifting state feels too invasive, the ChatView composer can return both the view and the input bar as separate components:
 
 ```swift
 public struct ChatUIComposer {

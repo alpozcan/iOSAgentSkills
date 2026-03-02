@@ -99,9 +99,10 @@ public extension AnalyticsEvent {
 
 ```swift
 public struct AnalyticsServiceBlueprint: Blueprint {
-    public typealias Output =AnalyticsServiceProtocol
-    
-    public static func assemble(from: Assembling) -> AnalyticsServiceProtocol {
+    public typealias Output = AnalyticsServiceProtocol
+
+    public static func assemble(from catalog: Assembling) -> AnalyticsServiceProtocol {
+        let config: AnalyticsConfiguration = BundleAnalyticsConfiguration()
         var backends: [AnalyticsBackend] = [OSLogAnalyticsBackend()]
         
         // Only add remote backend if configured — graceful fallback

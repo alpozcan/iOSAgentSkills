@@ -74,20 +74,20 @@ struct DailyQueryTrackerTests {
 }
 ```
 
-**2. catalog tests — verify registration, resolution, singleton behavior:**
+**2. Catalog tests — verify registration, resolution, singleton behavior (see [[02-protocol-driven-service-catalog]]):**
 ```swift
 @Suite("Catalog Tests")
 struct CatalogTests {
     init() { Catalog.main.clear() }
-    
-    @Test("Obtain calls builder each time (not singleton)")
-    func obtainCallsBuilderEachTime() {
+
+    @Test("Obtain calls factory each time (not singleton)")
+    func obtainCallsFactoryEachTime() {
         var count = 0
         Catalog.main.supply(TestBlueprint.self) { _ in
             count += 1; return TestServiceImpl(value: "call-\(count)")
         }
-        let s1 = Catalog.main.resolve(TestBlueprint.self)
-        let s2 = Catalog.main.resolve(TestBlueprint.self)
+        let s1 = Catalog.main.obtain(TestBlueprint.self)
+        let s2 = Catalog.main.obtain(TestBlueprint.self)
         #expect(s1.value == "call-1")
         #expect(s2.value == "call-2")
     }
@@ -198,21 +198,21 @@ class WythnosUITestCase: XCTestCase {
 
 ### Stub Service Strategy for Tests
 
-**Minimal mocks (UI testing) — fast, predictable:**
+**Minimal stubs (UI testing) — fast, predictable:**
 ```swift
 struct StubLLMEngine: LLMEngineProtocol {
     func generateResponse(prompt: String) async throws -> String {
         try? await Task.sleep(for: .milliseconds(200))
-        return "Mock AI response for UI testing."
+        return "Stub AI response for UI testing."
     }
 }
 ```
 
-**Rich mocks (debug mode) — realistic data patterns:**
+**Rich stubs (debug mode) — realistic data patterns:**
 ```swift
 actor PreviewCalendarStore: CalendarStoreProtocol {
     init() { self.events = generatePreviewEvents() }
-    
+
     private func generatePreviewEvents() -> [CalendarEvent] {
         // 30 days of realistic work/personal events
         // Standups Mon/Wed/Fri, deep work blocks, 1:1s, weekend gym
@@ -225,7 +225,7 @@ actor PreviewCalendarStore: CalendarStoreProtocol {
 - **Swift Testing is 2-3x faster** than XCTest for pure logic tests due to parallel execution
 - **`UserDefaults(suiteName: #function)`** guarantees zero test interference
 - **Regression tests from real bugs** (screenshot-driven) prevent regressions
-- **Stub override pattern** (`Catalog.main.register` in test setup) enables full integration testing without external services
+- **Stub override pattern** (`Catalog.main.supply` in test setup) enables full integration testing without external services — see [[09-debug-modes-and-mock-service-strategy]] for the three-tier stub system
 - **Async-first testing** with `async` test functions validates actor-based concurrency correctly
 
 ## Anti-Patterns
