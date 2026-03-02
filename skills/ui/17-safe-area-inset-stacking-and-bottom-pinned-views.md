@@ -1,8 +1,13 @@
+---
+title: "safeAreaInset Stacking and Bottom-Pinned Views in Custom Tab Bar Apps"
+description: "Why nested safeAreaInset(edge: .bottom) hides inner views and how to fix it. Documents five failing approaches and the solution: a single safeAreaInset block with conditional per-tab content."
+---
+
 # safeAreaInset Stacking and Bottom-Pinned Views in Custom Tab Bar Apps
 
 ## Context
 
-When you replace the system `TabView` with a custom tab bar using `safeAreaInset(edge: .bottom)` (per Skill 13), you encounter a critical layout challenge: **how to pin additional chrome (like a chat input bar) above the tab bar on specific tabs**. This is one of the most common and difficult layout problems in SwiftUI apps with custom navigation, and incorrect approaches silently fail — the view renders but is invisible, with no compiler errors or runtime warnings.
+When you replace the system `TabView` with a custom tab bar using `safeAreaInset(edge: .bottom)` (per [[13-swiftui-custom-tab-bar-and-navigation]]), you encounter a critical layout challenge: **how to pin additional chrome (like a chat input bar) above the tab bar on specific tabs**. This is one of the most common and difficult layout problems in SwiftUI apps with custom navigation, and incorrect approaches silently fail — the view renders but is invisible, with no compiler errors or runtime warnings.
 
 This skill documents what works, what doesn't, and why — based on real debugging sessions against iOS 26 / Xcode 26.
 
@@ -36,7 +41,7 @@ var body: some View {
 }
 ```
 
-Inside the chat tab, you need a persistent input bar pinned above the tab bar. The naive approaches all fail.
+Inside the chat tab, you need a persistent input bar (styled with [[04-design-system-as-core-module|design system components]]) pinned above the tab bar. The naive approaches all fail.
 
 ## What Does NOT Work
 
@@ -216,7 +221,14 @@ This is not a bug — it's how `safeAreaInset` composes. The API is designed for
 - **VStack children below a ScrollView render behind `safeAreaInset` chrome.** The VStack extends behind the inset area; the inset view covers it.
 - **Never rely on overlays or inner `safeAreaInset`s to place views above an outer `safeAreaInset`.** They will be invisible.
 - **When you add a custom tab bar via `safeAreaInset`, ALL per-tab bottom chrome must live in the same `safeAreaInset`.** This means the tab bar's `safeAreaInset` block must be aware of per-tab input bars, toolbars, or action sheets.
-- **Test bottom-pinned views with bright debug colors** (`Color.red`, `Color.orange`) to verify visibility before styling. If a bright-colored view is invisible, the problem is Z-order, not color/contrast.
+- **Test bottom-pinned views with bright debug colors** (`Color.red`, `Color.orange`) to verify visibility before styling — see [[18-ui-testing-regression-and-smoke]] for regression testing these layouts. If a bright-colored view is invisible, the problem is Z-order, not color/contrast.
+
+## Why This Matters
+
+- **`safeAreaInset` stacking is the #1 custom tab bar layout bug** — it silently hides views with no compiler errors or runtime warnings, wasting hours of debugging
+- **Understanding the Z-order model** prevents trial-and-error approaches that never converge on a solution
+- **The single-inset pattern** scales to any number of per-tab bottom chrome elements (input bars, toolbars, action sheets) by composing them in one `VStack`
+- **iPad multitasking:** In Split View and Slide Over, the safe area changes dynamically. Test bottom-pinned views in all multitasking configurations — `safeAreaInset` handles this correctly, but fixed-height assumptions may break when the window width changes.
 
 ## Anti-Patterns
 

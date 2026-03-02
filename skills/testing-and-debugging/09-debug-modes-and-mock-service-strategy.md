@@ -1,3 +1,8 @@
+---
+title: "Debug Modes and Stub Service Strategy for iOS Apps"
+description: "Three-tier mock system: UI testing (minimal), rich debug (realistic 30-day data), and developer mode (gesture-activated with SHA256). Launch arguments control which tier is active."
+---
+
 # Debug Modes and Stub Service Strategy for iOS Apps
 
 ## Context
@@ -116,6 +121,8 @@ public final class DeveloperModeActivator: ObservableObject {
 
 ### Supply Flow in App Entry Point
 
+Stub services are supplied via [[02-protocol-driven-service-catalog|Catalog]] overrides at launch:
+
 ```swift
 @main
 struct MyApp: App {
@@ -150,6 +157,8 @@ struct MyApp: App {
 ```
 
 ### UI Test Base Class
+
+The base class passes launch arguments to the app, enabling [[18-ui-testing-regression-and-smoke|UI regression tests]] with deterministic state:
 
 ```swift
 class WythnosUITestCase: XCTestCase {
@@ -191,7 +200,6 @@ if isUITesting || isProDebug {
 - **Developer mode code brute force:** The SHA256-validated developer code has no rate limiting. Add a delay (e.g., 2 seconds) after each failed attempt and lock out after 10 failures to prevent brute force.
 - **`removePersistentDomain` clearing user data:** The clean state pattern `UserDefaults.standard.removePersistentDomain(forName: bundleId)` removes ALL user preferences — including onboarding completion, notification preferences, and trial state. This is intentional for UI testing but catastrophic if accidentally triggered in production. Always guard with `#if DEBUG`.
 - **Mock data determinism:** `responses.randomElement()!` in `PreviewLLMEngine` makes debug sessions non-reproducible. For bug reports, seed the random generator or use indexed cycling instead.
-
 
 ## Why This Matters
 

@@ -1,3 +1,8 @@
+---
+title: "StoreKit 2 Subscription System with Intelligence-Based Trial"
+description: "Intelligence-based trial ending when AI demonstrates value (50 interactions, 3 patterns, or 21 days). TrialManager actor state machine, DailyQueryTracker, StoreKit 2 async API, and trial funnel analytics."
+---
+
 # StoreKit 2 Subscription System with Intelligence-Based Trial
 
 ## Context
@@ -22,7 +27,7 @@ Free Tier (rate-limited, inline upgrade cards)
 At ANY point: User subscribes → Pro (permanent until expiration)
 ```
 
-### TrialManager (Actor-Based State Machine)
+### TrialManager ([[06-actor-based-concurrency-patterns|Actor-Based]] State Machine)
 
 ```swift
 public actor TrialManager {
@@ -190,11 +195,11 @@ public enum ProFeature: String, Sendable {
 if !isPremium && dailyQueryTracker.isLimitReached {
     analytics.track(.freeLimitHit(type: "daily_query"))
     messages.append(ChatMessage(content: "upgrade_hint", isUser: false))
-    return  // Don't send to LLM
+    return  // Don't send to LLM (see [[08-on-device-llm-with-apple-foundation-models]])
 }
 ```
 
-### Analytics Integration for Trial Funnel
+### [[10-privacy-first-analytics-architecture|Analytics]] Integration for Trial Funnel
 
 ```swift
 public extension AnalyticsEvent {
@@ -218,6 +223,23 @@ public extension AnalyticsEvent {
 }
 ```
 
+### TrialManager Architecture Note (SRP)
+
+The current `TrialManager` combines state machine logic with maturity evaluation. For larger apps, consider splitting into:
+- `TrialStateMachine` — pure state transitions (trial → grace → expired → subscribed)
+- `MaturityEvaluator` — determines if trial maturity is reached (interaction count, patterns, days)
+
+This separation lets you unit test state transitions independently from maturity heuristics.
+
+## Edge Cases
+
+- **Device clock manipulation:** Users can set their device clock forward to extend the trial, then set it back. Mitigation: store timestamps as monotonic counters (e.g., `ProcessInfo.processInfo.systemUptime` deltas) or use server-validated time via `NTP`. For offline-first apps, accept the risk and track via analytics.
+- **App reinstall resets UserDefaults:** `UserDefaults` is cleared on reinstall, resetting trial state. Store critical trial state in **Keychain** (persists across reinstalls) or rely on `Transaction.currentEntitlements` for subscription verification.
+- **`DailyQueryTracker` race condition:** Concurrent `recordQuery()` calls (e.g., rapid taps) can read stale `queryCount` from UserDefaults and both increment from the same base. Mitigation: wrap the read-check-write in an actor or use `NSLock`.
+- **StoreKit sandbox vs production:** `Transaction.currentEntitlements` behaves differently in sandbox — subscriptions auto-renew faster, and `.unverified` transactions are more common. Always test with a sandbox Apple ID and handle `.unverified` gracefully.
+- **Expired subscription during grace period renewal:** Apple provides a billing grace period where the subscription is still active but payment failed. Check `transaction.revocationDate` and `transaction.expirationDate` separately.
+- **Generous trial abuse:** The 150-query generous trial resets with UserDefaults on reinstall. For high-value apps, track in Keychain or use device check (`DeviceCheck` API) for a server-side flag.
+
 ## Why This Matters
 
 - **Intelligence-based trial feels earned** — the user gets Pro access because the AI is "learning" them, creating emotional investment
@@ -232,3 +254,5 @@ public extension AnalyticsEvent {
 - Don't use `SKPaymentQueue` (StoreKit 1) — StoreKit 2 is simpler and more reliable
 - Don't store subscription state in UserDefaults as source of truth — always verify with `Transaction.currentEntitlements`
 - Don't block UI on subscription checks — check asynchronously and default to free
+- Don't rely solely on UserDefaults for trial state — it resets on reinstall; use Keychain for persistence
+- Don't ignore `.unverified` transactions — log them for debugging even if you don't grant entitlements

@@ -1,7 +1,12 @@
+---
+title: "EventKit to CoreData Sync Architecture"
+description: "Three-layer sync pipeline from EventKit to CoreData: CalendarService abstraction, CalendarSyncManager orchestrator, CalendarStore actor. Programmatic CoreData model, upsert by ID, and in-memory stores for tests."
+---
+
 # EventKit to CoreData Sync Architecture
 
 ## Context
-Your app reads calendar events from the system (EventKit) and needs to make them available for AI analysis, offline querying, and widget display. You need a sync layer that handles full sync, incremental sync, and background refresh — storing events in CoreData for fast local access.
+Your app reads calendar events from the system (EventKit) and needs to make them available for AI analysis, offline querying, and [[15-widgetkit-and-app-intents-integration|widget]] display. You need a sync layer that handles full sync, incremental sync, and background refresh — storing events in CoreData for fast local access. This data also powers [[11-notification-service-with-deep-linking|notifications]].
 
 ## Pattern
 
@@ -64,7 +69,11 @@ public actor CalendarStore: CalendarStoreProtocol {
             container.persistentStoreDescriptions = [desc]
         }
         container.loadPersistentStores { _, error in
-            if let error { fatalError("CalendarStore failed: \(error)") }
+            if let error {
+                // Log critical failure — recovery handled by caller
+                Logger(subsystem: "app.wythnos.ios", category: "persistence")
+                    .fault("CalendarStore failed to load: \(error.localizedDescription, privacy: .public)")
+            }
         }
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
@@ -120,8 +129,10 @@ public actor CalendarSyncManager {
     // Full sync: 90 days back + 7 days forward
     public func sync() async -> SyncState {
         let calendar = Calendar.current
-        let startDate = calendar.date(byAdding: .day, value: -90, to: Date())!
-        let endDate = calendar.date(byAdding: .day, value: 7, to: Date())!
+        guard let startDate = calendar.date(byAdding: .day, value: -90, to: Date()),
+              let endDate = calendar.date(byAdding: .day, value: 7, to: Date()) else {
+            return .failed(CalendarSyncError.dateCalculationFailed)
+        }
         
         do {
             let events = try await calendarService.fetchEvents(from: startDate, to: endDate)
@@ -136,8 +147,11 @@ public actor CalendarSyncManager {
     // Incremental sync: since last sync + rolling 7-day window
     public func incrementalSync() async -> SyncState {
         let lastSync = await store.lastSyncDate() ?? .distantPast
-        let startDate = min(lastSync, Calendar.current.date(byAdding: .day, value: -7, to: Date())!)
-        let endDate = Calendar.current.date(byAdding: .day, value: 7, to: Date())!
+        guard let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()),
+              let endDate = Calendar.current.date(byAdding: .day, value: 7, to: Date()) else {
+            return .failed(CalendarSyncError.dateCalculationFailed)
+        }
+        let startDate = min(lastSync, weekAgo)
         
         do {
             let events = try await calendarService.fetchEvents(from: startDate, to: endDate)
@@ -180,12 +194,21 @@ let fetched = try await store.fetchEvents(from: startDate, to: endDate)
 #expect(fetched.count == mockEvents.count)
 ```
 
+## Edge Cases
+
+- **Permission revoked mid-sync:** The user can revoke calendar access in Settings while a sync is in progress. `fetchEvents()` returns an empty array when unauthorized — handle this gracefully by checking `authorizationStatus()` before and after fetch, and notify the user via [[14-error-handling-and-typed-error-system|typed errors]].
+- **Large calendar (10K+ events):** Full sync of 90 days can return thousands of events. Batch `saveEvents()` into chunks of 500 to avoid CoreData memory pressure. Use `autoreleasepool` inside the batch loop.
+- **Concurrent sync guard:** Multiple sync triggers (app foreground + widget refresh + background fetch) can race. Add an `isSyncing` flag to `CalendarSyncManager` and return `.idle` if a sync is already in progress.
+- **Nil `eventIdentifier`:** `EKEvent.eventIdentifier` can be nil for events that haven't been saved to the calendar store. The current code falls back to `UUID().uuidString`, which creates duplicates on re-sync. Consider using a composite key (title + startDate + calendar) for deduplication when `eventIdentifier` is nil.
+- **CoreData merge conflicts:** When the main app and widget extension write to the same persistent store simultaneously, merge conflicts occur. `NSMergeByPropertyObjectTrumpMergePolicy` resolves this by favoring the latest write, but log conflicts for debugging.
+- **NSPredicate injection:** The `NSPredicate(format: "id == %@", event.id)` pattern uses format string substitution which is safe. Never use string interpolation like `NSPredicate(format: "id == '\(event.id)'")` — this allows predicate injection if `event.id` contains special characters.
+
 ## Why This Matters
 
-- **Actor isolation** for CoreData prevents threading crashes — `newBackgroundContext()` + `perform` is the correct pattern
-- **Programmatic CoreData model** avoids `.xcdatamodeld` — better for modular Tuist projects where models live in framework targets
+- **[[06-actor-based-concurrency-patterns|Actor isolation]]** for CoreData prevents threading crashes — `newBackgroundContext()` + `perform` is the correct pattern
+- **Programmatic CoreData model** avoids `.xcdatamodeld` — better for modular [[01-tuist-modular-architecture|Tuist]] projects where models live in framework targets
 - **Upsert by ID** prevents duplicate events when syncing
-- **`inMemory: true` constructor** enables fast, isolated unit tests without file system side effects
+- **`inMemory: true` constructor** enables fast, isolated [[05-swift-testing-and-tdd-patterns|unit tests]] without file system side effects
 - **Incremental sync** is O(recent events) instead of O(all events), critical for large calendars
 - **Pure value-type domain model** (`CalendarEvent`) crosses actor boundaries safely
 
@@ -196,3 +219,5 @@ let fetched = try await store.fetchEvents(from: startDate, to: endDate)
 - Don't store `EKEvent` objects — convert to your `CalendarEvent` value type immediately
 - Don't skip `mergePolicy` — `NSMergeByPropertyObjectTrumpMergePolicy` handles concurrent upserts correctly
 - Don't use `.xcdatamodeld` in framework targets — use programmatic model creation
+- Don't use string interpolation in NSPredicate format strings — always use `%@` substitution to prevent predicate injection
+- Don't sync without checking `authorizationStatus()` first — permission can be revoked at any time

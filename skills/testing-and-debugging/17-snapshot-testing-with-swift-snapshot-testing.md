@@ -1,3 +1,8 @@
+---
+title: "Snapshot Testing for SwiftUI in Modular Tuist Apps"
+description: "Per-module visual regression testing using swift-snapshot-testing with a 5-language matrix (en, ar, de, ja, tr), 3 device sizes, component-level assertions, and deterministic mock factories."
+---
+
 # Snapshot Testing for SwiftUI in Modular Tuist Apps
 
 ## Context
@@ -41,7 +46,7 @@ Modules/Core/DesignSystem/
 
 ### Tuist Configuration
 
-Create a shared `SnapshotTestSupport` static framework and per-module snapshot test targets:
+Following the [[01-tuist-modular-architecture]], create a shared `SnapshotTestSupport` static framework and per-module snapshot test targets:
 
 ```swift
 // Shared test support (config, helpers, mocks)
@@ -109,7 +114,7 @@ public enum SnapshotConfig {
 }
 ```
 
-This covers: LTR baseline, full RTL mirroring, word truncation stress, CJK character widths, and locale-specific casing. Similar scripts (French≈German for layout, Hindi≈Arabic for RTL) are implicitly covered.
+This covers: LTR baseline, full RTL mirroring, word truncation stress, CJK character widths, and locale-specific casing (see [[16-localization-and-multi-language-patterns]] for the full localization strategy). Similar scripts (French≈German for layout, Hindi≈Arabic for RTL) are implicitly covered.
 
 ### Device Sizes
 
@@ -180,7 +185,7 @@ public func assertFittingSnapshot<V: View>(
 
 ### Writing Tests
 
-**Component test** (reusable DesignSystem components — highest ROI):
+**Component test** (reusable [[04-design-system-as-core-module|DesignSystem]] components -- highest ROI):
 
 ```swift
 import Testing
@@ -243,7 +248,7 @@ struct ChatViewSnapshotTests {
 
 ### Mock Strategy for Snapshots
 
-Create lightweight mocks in the shared `SnapshotTestSupport` module. They must:
+Create lightweight mocks in the shared `SnapshotTestSupport` module, separate from the [[09-debug-modes-and-mock-service-strategy|three-tier mock system]] used at runtime. They must:
 - Return fixed, deterministic data (no `Date()`, no random values)
 - Conform to all protocol requirements
 - Be `Sendable` (actors for stateful protocols, structs for stateless)
@@ -270,7 +275,7 @@ xcodebuild test -scheme DesignSystem -only-testing:DesignSystemSnapshotTests \
 xcodebuild test -scheme DesignSystem -only-testing:DesignSystemSnapshotTests \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 
-# Force re-record all (when visual changes are intentional):
+# Force re-record all (when visual changes are intentional — see [[18-makefile-for-ios-project-workflows]] for Makefile targets):
 SNAPSHOT_TESTING_RECORD=all xcodebuild test ...
 ```
 
@@ -281,6 +286,8 @@ SNAPSHOT_TESTING_RECORD=all xcodebuild test ...
 3. **Never auto-record on CI**: The default `.missing` mode records locally; on CI, missing references should fail
 4. **Commit `__Snapshots__/`**: Reference images must be in git so diffs are visible in PRs
 5. **Parallel execution**: Snapshot tests are stateless — enable Xcode parallel testing
+6. **CI rendering differences:** Snapshot images rendered on macOS CI (GitHub Actions) may differ from local renders due to font hinting, anti-aliasing, and GPU differences. Pin the simulator version AND the macOS runner version. Use `perceptualPrecision: 0.98` to tolerate minor rendering variations.
+7. **Simulator version pinning:** Always specify the iOS version in CI destinations (e.g., `OS=18.2`). Without it, the default simulator version changes with Xcode updates, invalidating all reference images.
 
 ## Why This Matters
 

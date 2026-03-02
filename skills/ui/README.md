@@ -1,8 +1,8 @@
-# UI Skills
+# UI — Map of Content
 
-Design system, navigation, and presentation layer patterns for SwiftUI apps.
+Design system infrastructure, custom navigation, layout patterns, and multi-language support for SwiftUI apps that feel premium.
 
-## Skills
+## The Design Foundation
 
 [[04-design-system-as-core-module]] defines the visual language as a Core module: color tokens, typography scales, spacing grid, reusable components, animation primitives, and a centralized haptic feedback system. Every UI skill in this graph builds on these tokens. The design system enforces dark-mode-only, 4pt grid alignment, and OLED-optimized true black backgrounds through code — not documentation.
 

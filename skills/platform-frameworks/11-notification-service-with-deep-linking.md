@@ -1,3 +1,8 @@
+---
+title: "Local Notification Service with LLM-Generated Content and Deep Linking"
+description: "Actor-based notification service scheduling AI-generated local notifications (weekly summaries, meeting reminders). Deep linking to 11 native video apps, engagement-gated permission requests, and smart meeting scoring."
+---
+
 # Local Notification Service with LLM-Generated Content and Deep Linking
 
 ## Context
@@ -11,7 +16,7 @@ You need a notification system that sends contextual, AI-generated local push no
 public actor NotificationService: NotificationServiceProtocol {
     private let notificationCenter: UNUserNotificationCenter
     private let contentGenerator: NotificationContentGeneratorProtocol
-    private let calendarStore: CalendarStoreProtocol
+    private let calendarStore: CalendarStoreProtocol  // see [[12-eventkit-coredata-sync-architecture]]
     private let deepLinkHandler: DeepLinkHandlerProtocol
     private let preferencesStore: NotificationPreferencesStore
     
@@ -123,6 +128,25 @@ public struct DeepLinkHandler: DeepLinkHandlerProtocol {
 }
 ```
 
+> **Security note:** The `meetingPatterns` are hardcoded string literals, which is intentional — they should never be constructed from user input. The `NSDataDetector` approach for URL extraction is safe because it uses Apple's built-in URL detection rather than custom regex, avoiding ReDoS vulnerabilities. However, validate extracted URLs before opening them — a malicious calendar event could contain a `javascript:` or `data:` URL scheme.
+
+### Configurable Platform Patterns
+
+Extract hardcoded URL patterns into a configurable constant for easier updates:
+
+```swift
+public struct MeetingPlatformConfig: Sendable {
+    public static let `default` = MeetingPlatformConfig(platforms: [
+        MeetingPlatformPattern(platform: .zoom, patterns: ["zoom.us/j/", "zoom.us/s/", "zoom.us/my/"]),
+        MeetingPlatformPattern(platform: .googleMeet, patterns: ["meet.google.com/"]),
+        MeetingPlatformPattern(platform: .microsoftTeams, patterns: ["teams.microsoft.com/l/meetup-join"]),
+        // ... other platforms
+    ])
+
+    public let platforms: [MeetingPlatformPattern]
+}
+```
+
 ### Notification Preferences with Smart Defaults
 
 ```swift
@@ -183,12 +207,21 @@ public struct SmartMeetingDetector {
 }
 ```
 
+## Edge Cases
+
+- **Meeting link false positives:** The keyword-based meeting detection can match non-meeting URLs (e.g., a blog post about Zoom at `zoom.us/blog/...`). Mitigate by checking URL path structure — meeting URLs typically contain numeric IDs or specific path segments (`/j/`, `/l/meetup-join`).
+- **Native app not installed (web URL fallback):** When converting to a native scheme (e.g., `zoomus://`), check if the app can open the URL with `UIApplication.shared.canOpenURL()` before attempting. Fall back to the original HTTPS URL if the app isn't installed.
+- **64 notification limit:** iOS limits apps to 64 pending local notifications. For users with many meetings, prioritize by importance score and batch schedule within the limit. Remove expired notifications before scheduling new ones.
+- **Timezone changes:** If the user travels across timezones, previously scheduled notification triggers may fire at wrong local times. Re-schedule all notifications on `NSSystemTimeZoneDidChange` notification or on app foreground.
+- **All-day event reminder timing:** All-day events have a `startDate` at midnight. Scheduling a reminder 10 minutes before midnight is rarely useful. Skip all-day events for meeting reminders or use a custom time (e.g., 8 AM on the event day).
+- **URL scheme validation:** Before opening extracted URLs, validate the scheme is in an allowlist (`https`, `zoomus`, `msteams`, etc.). Never open `javascript:`, `data:`, or `file:` URLs from calendar event content — this prevents potential URL scheme attacks.
+
 ## Why This Matters
 
-- **LLM-generated notification content** is personalized and contextual, not templated
+- **[[08-on-device-llm-with-apple-foundation-models|LLM-generated]] notification content** is personalized and contextual, not templated
 - **Deep linking to native video apps** (Zoom, Meet, Teams) lets users join meetings from the notification
 - **Engagement-gated permission requests** result in higher opt-in rates than asking on first launch
-- **`actor` isolation** prevents race conditions when scheduling/canceling notifications concurrently
+- **[[06-actor-based-concurrency-patterns|`actor` isolation]]** prevents race conditions when scheduling/canceling notifications concurrently
 - **Preferences persistence** via `Codable` + `UserDefaults` with smart defaults
 
 ## Anti-Patterns
@@ -198,3 +231,5 @@ public struct SmartMeetingDetector {
 - Don't schedule all-day events for meeting reminders
 - Don't schedule reminders for past events — always check `triggerDate > Date()`
 - Don't forget to re-supply dependent services when mocking for tests
+- Don't open URLs extracted from calendar events without validating the scheme — reject `javascript:`, `data:`, and `file:` schemes
+- Don't schedule more than 64 notifications — prioritize by importance score and clean up expired ones

@@ -1,3 +1,8 @@
+---
+title: "UI Testing for Regression & Smoke Testing"
+description: "XCUITest suite for critical user journeys: tab navigation, chat flow, settings, keyboard behavior. Uses launch arguments for deterministic state and accessibility identifiers for element discovery."
+---
+
 # UI Testing for Regression & Smoke Testing
 
 ## Context
@@ -66,7 +71,7 @@ class WythnosUITestCase: XCTestCase {
 
 | Argument | Effect |
 |----------|--------|
-| `--uitesting` | Minimal mock services, clean state, deterministic data |
+| `--uitesting` | Minimal mock services, clean state, deterministic data (see [[09-debug-modes-and-mock-service-strategy]]) |
 | `--skip-onboarding` | Skip onboarding flow, go directly to main app |
 | `--pro-debug` | Rich mock data, Pro subscription unlocked |
 | `--show-onboarding` | Force onboarding to show even if completed |
@@ -81,7 +86,7 @@ func testAppLaunchesSuccessfully() {
     XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
 }
 
-func testTabNavigation() {
+func testTabNavigation() {  // Tests the [[13-swiftui-custom-tab-bar-and-navigation|custom tab bar]]
     tapTab("tab_insights")
     XCTAssertTrue(app.otherElements["insights_view"].waitForExistence(timeout: 5))
     
@@ -222,6 +227,8 @@ func testSettingsFeedbackButton() {
 
 **5. Keyboard Behavior**
 
+Keyboard tests validate the chat input area and [[17-safe-area-inset-stacking-and-bottom-pinned-views|bottom-pinned view]] behavior:
+
 ```swift
 func testKeyboardShowsAndDismisses() {
     tapTab("tab_chat")
@@ -307,6 +314,8 @@ xcodebuild test -workspace App.xcworkspace -scheme AppUITests \
 ```
 
 ### Makefile Integration
+
+These targets are part of the project's [[18-makefile-for-ios-project-workflows|Makefile workflow]]:
 
 ```makefile
 # UI Testing
@@ -398,11 +407,38 @@ if emptyState.waitForExistence(timeout: 3) {
 }
 ```
 
+## Edge Cases
+
+- **Onboarding flow test:** Test the full onboarding flow with `--show-onboarding` launch argument. Verify each step progresses, calendar permission dialog appears (in simulator it auto-dismisses), and completion transitions to the main tab view.
+  ```swift
+  class OnboardingUITests: WythnosUITestCase {
+      override var launchArguments: [String] { ["--uitesting", "--show-onboarding"] }
+
+      func testOnboardingCompletesSuccessfully() {
+          // Verify onboarding steps
+          XCTAssertTrue(app.otherElements["onboarding_welcome"].waitForExistence(timeout: 5))
+          app.buttons["onboarding_continue"].tap()
+          // ... progress through steps
+          XCTAssertTrue(app.otherElements["insights_view"].waitForExistence(timeout: 10))
+      }
+  }
+  ```
+- **Rotation test:** Verify layout integrity after device rotation, especially for the chat input bar and tab bar:
+  ```swift
+  func testRotationPreservesLayout() {
+      XCUIDevice.shared.orientation = .landscapeLeft
+      sleep(1)
+      XCTAssertTrue(app.buttons["chat_send_button"].waitForExistence(timeout: 5))
+      XCUIDevice.shared.orientation = .portrait
+  }
+  ```
+- **NSPredicate in UI tests:** The test helpers use `NSPredicate(format: "label CONTAINS[c] %@", text)` with `%@` substitution, which is safe. Never use string interpolation in predicates — this prevents predicate injection from accessibility labels containing special characters.
+
 ## Why This Matters
 
 - **Regression tests catch bugs before merge** - Every PR runs critical path tests
 - **Accessibility identifiers enable reliable testing** - Not dependent on localized strings
-- **Mock services via launch arguments** - Deterministic, fast, no network calls
+- **Mock services via launch arguments** - Deterministic, fast, no network calls — see [[05-swift-testing-and-tdd-patterns]] for unit-level mock patterns
 - **Parallel testing reduces CI time** - Split tests across simulators
 - **Keyboard and tab switching tests** - Common sources of state bugs
 - **Feedback button tests** - Ensure core interactions work

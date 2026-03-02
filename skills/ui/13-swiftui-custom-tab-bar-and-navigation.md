@@ -1,7 +1,12 @@
+---
+title: "Custom SwiftUI Tab Bar with Design System Integration"
+description: "Replacing TabView with a custom tab bar using safeAreaInset, re-tap scroll-to-top, spring-physics ButtonStyle, breathing glow animations, keyboard avoidance, and splash screen transitions."
+---
+
 # Custom SwiftUI Tab Bar with Design System Integration
 
 ## Context
-The default `TabView` in SwiftUI is limited in customization — you can't add custom glyph animations, breathing glow rings, or spring-physics press feedback. For a premium dark-mode app, you need a fully custom tab bar that integrates with your design system tokens.
+The default `TabView` in SwiftUI is limited in customization — you can't add custom glyph animations, breathing glow rings, or spring-physics press feedback. For a premium dark-mode app, you need a fully custom tab bar that integrates with your [[04-design-system-as-core-module|design system tokens]].
 
 ## Pattern
 
@@ -19,7 +24,7 @@ struct MainTabView: View {
 
         var id: Int { rawValue }
         var icon: String { /* SF Symbol names */ }
-        var label: String { /* Localized strings */ }
+        var label: String { /* Localized strings — see [[16-localization-and-multi-language-patterns]] */ }
         var analyticsName: String { /* screen identifiers */ }
     }
 
@@ -176,9 +181,16 @@ private var contentView: some View {
 }
 ```
 
+## Edge Cases
+
+- **Dynamic Type truncation:** Tab labels may truncate at larger accessibility text sizes. Use `.minimumScaleFactor(0.8)` on labels and test with `sizeCategory: .accessibilityExtraExtraExtraLarge` in snapshots.
+- **VoiceOver traversal:** Custom tab bars need explicit `.accessibilityElement(children: .contain)` and `.accessibilityLabel()` annotations. Each tab button should have a clear label (e.g., "Chat tab, selected") and `.accessibilityAddTraits(.isSelected)` for the active tab.
+- **State restoration after kill:** When the app is killed and relaunched, the selected tab resets to default. Persist `selectedTab` in `UserDefaults` or `@AppStorage` if tab state should survive app termination.
+- **Re-tap losing unsaved input:** The re-tap mechanism changes the view's `.id()`, which recreates it — discarding any unsaved text in input fields. Show a confirmation dialog or save draft state before resetting.
+
 ## Why This Matters
 
-- **`safeAreaInset`** is the correct API for custom tab bars — it respects keyboard avoidance and safe areas automatically
+- **`safeAreaInset`** is the correct API for custom tab bars — it respects keyboard avoidance and safe areas automatically (but beware of [[17-safe-area-inset-stacking-and-bottom-pinned-views|stacking issues]] when nesting insets)
 - **Re-tap detection** (tap already-selected tab) enables scroll-to-top via view identity change
 - **Haptic feedback on every tab switch** creates a premium tactile feel
 - **No `TabView`** means full control over animations, glyphs, and layout
@@ -187,7 +199,7 @@ private var contentView: some View {
 ## Anti-Patterns
 
 - Don't use `overlay` for tab bars — it doesn't push content up, causing overlap
-- Don't use padding for keyboard avoidance — `.ignoresSafeArea(.keyboard)` on the tab bar is the correct approach
+- Don't use padding for keyboard avoidance — `.ignoresSafeArea(.keyboard)` on the tab bar is the correct approach (see also [[17-safe-area-inset-stacking-and-bottom-pinned-views]])
 - Don't animate tab content transitions — it causes input field shifting during keyboard interactions
 - Don't use `AnyView` for tab content — use `@ViewBuilder` with `switch`
 - Don't resolve services inside the View body — resolve once in the factory and inject

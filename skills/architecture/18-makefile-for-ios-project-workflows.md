@@ -1,7 +1,12 @@
+---
+title: "Makefile as the Single Entry Point for iOS Project Workflows"
+description: "Self-documenting Makefile as the single entry point for Tuist lifecycle, multiple launch modes, unit and snapshot testing, simulator management, and App Store submission."
+---
+
 # Makefile as the Single Entry Point for iOS Project Workflows
 
 ## Context
-A modular iOS project built with Tuist has many moving parts: dependency installation, project generation, building, launching in multiple debug modes (pro, free, onboarding, developer mode), running unit tests, running snapshot tests per module, managing simulators, streaming logs, and resetting app data. Without a single entry point, every team member (and every AI agent) has to remember or look up the exact `xcodebuild` incantation, the right simulator name, the correct `--only-testing` target, and the Tuist lifecycle order. A Makefile solves this — it's the universal CLI that every developer already knows.
+A modular iOS project built with [[01-tuist-modular-architecture|Tuist]] has many moving parts: dependency installation, project generation, building, launching in multiple debug modes (pro, free, onboarding, developer mode), running unit tests, running snapshot tests per module, managing simulators, streaming logs, and resetting app data. Without a single entry point, every team member (and every AI agent) has to remember or look up the exact `xcodebuild` incantation, the right simulator name, the correct `--only-testing` target, and the Tuist lifecycle order. A Makefile solves this — it's the universal CLI that every developer already knows.
 
 ## Pattern
 
@@ -64,7 +69,7 @@ help:
 
 ### Setup & Build Targets
 
-The Tuist lifecycle has a strict order: clean → install → generate → build. Encode this in `make setup`:
+The [[01-tuist-modular-architecture|Tuist]] lifecycle has a strict order: clean → install → generate → build. Encode this in `make setup`:
 
 ```makefile
 .PHONY: setup
@@ -140,7 +145,7 @@ endef
 
 ### Testing Targets
 
-For unit tests, use `-only-testing:` to explicitly list test targets (avoids running snapshot tests or UI tests accidentally):
+For [[05-swift-testing-and-tdd-patterns|unit tests]], use `-only-testing:` to explicitly list test targets (avoids running snapshot tests or UI tests accidentally):
 
 ```makefile
 .PHONY: test
@@ -155,7 +160,7 @@ test: _ensure-workspace
 		2>&1 | grep -E "Test run|error:" | tail -20
 ```
 
-For snapshot tests, loop over each module's scheme since snapshot test targets are associated with their module schemes:
+For [[17-snapshot-testing-with-swift-snapshot-testing|snapshot tests]], loop over each module's scheme since snapshot test targets are associated with their module schemes:
 
 ```makefile
 .PHONY: snapshots
@@ -253,6 +258,26 @@ make build SIMULATOR="iPad Pro 13-inch (M5)"
 
 This works because Make substitutes `$(SIMULATOR)` into the `$(DESTINATION)` string.
 
+## Edge Cases
+
+- **`make lint` target:** Add a SwiftLint target for code quality enforcement:
+  ```makefile
+  .PHONY: lint
+  lint:
+  	@if command -v swiftlint >/dev/null 2>&1; then \
+  		swiftlint lint --quiet; \
+  	else \
+  		echo "⚠️  SwiftLint not installed. Run: brew install swiftlint"; \
+  	fi
+  ```
+- **Error handling in recipes:** Make recipes that pipe through `grep` or `tail` can mask non-zero exit codes from `xcodebuild`. Use `set -o pipefail` in the shell or check `${PIPESTATUS[0]}`:
+  ```makefile
+  SHELL := /bin/bash
+  .SHELLFLAGS := -o pipefail -c
+  ```
+  This ensures `make test` fails when `xcodebuild test` fails, even when piped through `grep`.
+- **Parallel make execution:** Don't use `make -j` with targets that share the same simulator — concurrent `xcrun simctl` commands can corrupt simulator state. Run testing targets sequentially.
+
 ## Why This Matters
 
 - **Single discovery point**: `make` shows everything — no hunting through Scripts/, README, or wiki
@@ -260,7 +285,7 @@ This works because Make substitutes `$(SIMULATOR)` into the `$(DESTINATION)` str
 - **AI agent friendly**: An agent can run `make` to discover all targets, then execute the right one
 - **Composable**: `make fresh` chains `build`, `_boot-simulator`, and `reset` via Make dependencies
 - **Overridable**: `SIMULATOR=` lets you target any device without editing files
-- **CI-compatible**: Same Makefile works locally and in GitHub Actions / Xcode Cloud
+- **CI-compatible**: Same Makefile works locally and in GitHub Actions / Xcode Cloud, complementing [[20-fastlane-app-store-connect-publishing|Fastlane for App Store submission]]
 - **Self-documenting**: The `help` target doubles as living documentation
 
 ## Anti-Patterns

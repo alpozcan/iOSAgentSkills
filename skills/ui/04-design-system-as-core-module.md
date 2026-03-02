@@ -1,3 +1,8 @@
+---
+title: "Design System as a Core Framework Module"
+description: "Four-layer design system as a Core module: tokens (colors, typography, spacing), reusable components, animation primitives, and centralized haptic feedback. Dark-mode-only, 4pt grid, OLED-optimized."
+---
+
 # Design System as a Core Framework Module
 
 ## Context
@@ -5,7 +10,7 @@ Every Feature module needs consistent colors, typography, spacing, animations, a
 
 ## Pattern
 
-Build the design system as a **Core framework module** with four layers: tokens, components, animations, and haptics.
+Build the design system as a **Core framework module** (see [[01-tuist-modular-architecture]]) with four layers: tokens, components, animations, and haptics.
 
 ### Layer 1: Design Tokens (Static Enums, No Instances)
 
@@ -83,7 +88,7 @@ public struct NyxCard<Content: View>: View {
     }
 }
 
-// NyxErrorCard — typed error states with recovery actions
+// NyxErrorCard — typed error states with recovery actions (see [[14-error-handling-and-typed-error-system]])
 public struct NyxErrorCard: View {
     let error: WythnosError
     let onRecovery: ((RecoveryAction) -> Void)?
@@ -197,12 +202,27 @@ public struct NyxPressableStyle: ButtonStyle {
 5. **OLED optimized** — true black (#000000) as primary background
 6. **Surface hierarchy** — 3-level z-axis: Primary (black) → Secondary (0.07) → Elevated (0.10)
 
+## Edge Cases
+
+- **Accessibility contrast ratios:** `NyxColors.textTertiary` at 0.4 opacity on `surfacePrimary` (black) yields a contrast ratio of ~5.3:1, meeting WCAG AA for normal text. However, `textTertiary` on `surfaceElevated` drops below AA. Audit all color combinations with Accessibility Inspector.
+- **Dynamic Type with `@ScaledMetric`:** The current typography uses fixed `Font.system(size:)` values. For accessibility compliance, wrap sizing values in `@ScaledMetric` or use `.font(.body)` with relative text styles:
+  ```swift
+  @ScaledMetric(relativeTo: .body) var bodySize: CGFloat = 15
+  ```
+- **Reduced motion fallbacks:** Users with "Reduce Motion" enabled (`UIAccessibility.isReduceMotionEnabled` / `@Environment(\.accessibilityReduceMotion)`) should see instant transitions instead of spring animations. Check this in `NyxAnimation`:
+  ```swift
+  public static var spring: Animation {
+      UIAccessibility.isReduceMotionEnabled ? .linear(duration: 0.1) : .spring(response: 0.35, dampingFraction: 0.8)
+  }
+  ```
+- **Token naming convention:** Use semantic names (`textPrimary`, `surfaceElevated`) not visual names (`white95`, `gray10`). This allows future theming without renaming.
+
 ## Why This Matters
 
 - **Compile-time guarantee** — every Feature module imports `DesignSystem` and uses the same tokens
 - **Enum-based tokens** — no instances, no allocation, no runtime lookups
-- **Haptic consistency** — centralized enum prevents scattered `UIImpactFeedbackGenerator` allocations
-- **Testable components** — components like `NyxErrorCard` can be tested for correct error-to-action mapping
+- **Haptic consistency** — centralized enum prevents scattered `UIImpactFeedbackGenerator` allocations; these haptics are used throughout the [[13-swiftui-custom-tab-bar-and-navigation|custom tab bar]]
+- **Testable components** — components like `NyxErrorCard` can be tested for correct error-to-action mapping (see [[14-error-handling-and-typed-error-system]])
 
 ## Anti-Patterns
 

@@ -846,7 +846,7 @@ Before first submission:
 - [ ] `ExportOptions-AppStore.plist` created in project root
 - [ ] `.gitignore` includes `AuthKey*.json`, `*.p8`, `*.p12`, `*.cer`
 
-## Rules
+## Why This Matters
 
 - **Always use API key auth for CI** — Apple ID auth requires interactive 2FA and session cookies that expire. API keys are stateless and never expire (until revoked).
 - **Always invoke via `bundle exec fastlane`** — Running bare `fastlane` uses whatever global version is installed. Bundler ensures every environment runs the same version.

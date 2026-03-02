@@ -1,3 +1,8 @@
+---
+title: "Swift Testing Framework Patterns and TDD in Modular iOS Apps"
+description: "Modern Swift Testing framework over XCTest for all unit tests. Test isolation via UserDefaults scoping, five test categories, stub override via Catalog, and regression tests from real bugs."
+---
+
 # Swift Testing Framework Patterns and TDD in Modular iOS Apps
 
 ## Context
@@ -103,7 +108,7 @@ struct DynamicPromptEngineTests {
         let engine = DynamicPromptEngine()
         #expect(engine.classifyIntent("Do I have any conflicts?").category == .conflictDetection)
         #expect(engine.classifyIntent("When am I free?").category == .freeTimeAnalysis)
-        #expect(engine.classifyIntent("Çakışma var mı?").category == .conflictDetection)  // Turkish
+        #expect(engine.classifyIntent("Çakışma var mı?").category == .conflictDetection)  // Turkish — see [[16-localization-and-multi-language-patterns]]
     }
     
     @Test("Evolution stage advances with interaction count")
@@ -176,6 +181,8 @@ struct InMemoryTrainingStoreTests {
 
 ### UI Test Base Class Pattern
 
+The base class below is shared with [[18-ui-testing-regression-and-smoke]] for full regression coverage:
+
 ```swift
 class WythnosUITestCase: XCTestCase {
     var app: XCUIApplication!
@@ -219,6 +226,23 @@ actor PreviewCalendarStore: CalendarStoreProtocol {
     }
 }
 ```
+
+## Edge Cases
+
+- **`UserDefaults(suiteName:)` force unwrap:** The pattern `UserDefaults(suiteName: #function)!` force unwraps because `suiteName` can theoretically return nil for invalid names. In practice, `#function` always produces a valid suite name. However, if you use dynamic strings, prefer `guard let defaults = UserDefaults(suiteName: name) else { ... }`.
+- **Parallel test interference:** Swift Testing runs `@Test` functions in parallel by default. If two tests use the same `suiteName` (e.g., both hardcode `"test"`), they corrupt each other's state. Always use `#function` as the suite name.
+- **Async timeout workarounds:** Swift Testing doesn't have a built-in timeout mechanism like XCTest's `waitForExpectations`. For actor-based tests, use `Task.sleep` with a reasonable upper bound and check state, or wrap in `withTimeout { }` utility.
+- **Parameterized test example:** Use `@Test(arguments:)` for data-driven tests:
+  ```swift
+  @Test("Intent classification", arguments: [
+      ("conflict", UserIntentCategory.conflictDetection),
+      ("çakışma", UserIntentCategory.conflictDetection),
+      ("free time", UserIntentCategory.freeTimeAnalysis),
+  ])
+  func intentClassification(query: String, expected: UserIntentCategory) {
+      #expect(engine.classifyIntent(query).category == expected)
+  }
+  ```
 
 ## Why This Matters
 
