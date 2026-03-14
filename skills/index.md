@@ -20,6 +20,7 @@ The structural backbone. These skills define how code is organized, how dependen
 - [[14-error-handling-and-typed-error-system]] — typed errors with recovery actions, safety classification for AI responses, and localized refusal handling
 - [[18-makefile-for-ios-project-workflows]] — the single entry point for every project workflow: build, test, run, snapshot, and App Store submission
 - [[24-swiftdata-and-observation-framework-patterns]] — @Model, @Observable, @Query, and @ModelActor in modular apps. CoreData migration, actor-isolated queries, and fine-grained view observation
+- [[34-solid-mvvm-view-decomposition]] — enforce SOLID principles in SwiftUI MVVM apps: single-responsibility ViewModels, protocol-driven dependencies, reusable views under 200-300 LOC, and systematic decomposition strategies
 
 **MOC:** [[architecture-moc]]
 
