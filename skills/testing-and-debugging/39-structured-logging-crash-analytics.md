@@ -1,0 +1,200 @@
+---
+title: "Logging & Crash Analytics Stack"
+description: "Production logging with os.Logger per module, crash reporting with Sentry, and privacy-first analytics with TelemetryDeck. Covers log levels, privacy annotations, breadcrumbs, and App Store compliance."
+---
+
+# Logging & Crash Analytics Stack
+
+## Context
+
+Every shipping app needs three layers of observability: **structured logging** (on-device, for debugging), **crash reporting** (remote, for stability), and **usage analytics** (remote, for product decisions). This skill combines [[26-structured-logging-and-log-levels]] with [[32-sentry-telemetrydeck-integration]] into a single cohesive stack, and adds the missing pieces: breadcrumb trails, launch-time initialization, and a unified `AppObservability` entry point.
+
+## Pattern
+
+### Unified Entry Point
+
+```swift
+import OSLog
+import Sentry
+import TelemetryDeck
+
+enum AppObservability {
+    /// Call once in App.init() or application(_:didFinishLaunching:)
+    static func bootstrap(
+        sentryDSN: String,
+        telemetryAppID: String,
+        environment: String = "production"
+    ) {
+        // 1. Sentry — crash reporting
+        SentrySDK.start { options in
+            options.dsn = sentryDSN
+            options.environment = environment
+            options.tracesSampleRate = 0.1          // 10% performance traces
+            options.attachScreenshot = true          // Attach screenshot on crash
+            options.enableMetricKit = true           // MetricKit integration
+            options.enablePreWarmedAppStartTracing = true
+            #if DEBUG
+            options.debug = true
+            options.enabled = false                  // Disable in debug
+            #endif
+        }
+
+        // 2. TelemetryDeck — anonymous analytics
+        let config = TelemetryDeck.Config(appID: telemetryAppID)
+        TelemetryDeck.initialize(config: config)
+
+        // 3. Log bootstrap complete
+        Logger.app.info("Observability bootstrapped: env=\(environment)")
+    }
+}
+```
+
+### Per-Module Loggers
+
+```swift
+import OSLog
+
+extension Logger {
+    private static let subsystem = Bundle.main.bundleIdentifier ?? "com.app"
+
+    static let app      = Logger(subsystem: subsystem, category: "app")
+    static let ocr      = Logger(subsystem: subsystem, category: "ocr")
+    static let store    = Logger(subsystem: subsystem, category: "store")
+    static let sync     = Logger(subsystem: subsystem, category: "sync")
+    static let network  = Logger(subsystem: subsystem, category: "network")
+    static let widget   = Logger(subsystem: subsystem, category: "widget")
+}
+```
+
+### Log Level Discipline
+
+| Level | Use | Example |
+|-------|-----|---------|
+| `.debug` | Development-only detail | `Logger.ocr.debug("Recognized \(wordCount) words")` |
+| `.info` | Normal operations | `Logger.store.info("Product loaded: \(productID)")` |
+| `.notice` | Notable events | `Logger.app.notice("Onboarding completed")` |
+| `.error` | Recoverable failures | `Logger.network.error("Book lookup failed: \(error)")` |
+| `.fault` | Unrecoverable — should never happen | `Logger.app.fault("SwiftData context nil")` |
+
+### Privacy Annotations
+
+```swift
+// Public — visible in Console.app + crash logs
+Logger.ocr.info("Recognized text from page \(pageNumber, privacy: .public)")
+
+// Private (default) — redacted in release builds
+Logger.store.info("Processing quote: \(quoteText, privacy: .private)")
+
+// Sensitive — always redacted
+Logger.network.debug("API key: \(apiKey, privacy: .sensitive)")
+```
+
+### Sentry Breadcrumbs
+
+Add breadcrumbs at key moments so crash reports have context:
+
+```swift
+extension SentrySDK {
+    static func addBreadcrumb(
+        category: String,
+        message: String,
+        level: SentryLevel = .info
+    ) {
+        let crumb = Breadcrumb(level: level, category: category)
+        crumb.message = message
+        SentrySDK.addBreadcrumb(crumb)
+    }
+}
+
+// Usage throughout the app:
+SentrySDK.addBreadcrumb(category: "ocr", message: "Started camera capture")
+SentrySDK.addBreadcrumb(category: "navigation", message: "Opened quote detail")
+SentrySDK.addBreadcrumb(category: "iap", message: "Initiated Pro purchase")
+```
+
+### TelemetryDeck Events
+
+```swift
+// Track feature usage (anonymous, no PII)
+TelemetryDeck.signal("quote.saved", parameters: ["source": "camera"])
+TelemetryDeck.signal("quote.saved", parameters: ["source": "manual"])
+TelemetryDeck.signal("widget.added")
+TelemetryDeck.signal("share.card.exported")
+TelemetryDeck.signal("onboarding.completed")
+TelemetryDeck.signal("pro.purchased")
+TelemetryDeck.signal("pro.restored")
+```
+
+### App Init
+
+```swift
+@main
+struct PapercutApp: App {
+    init() {
+        AppObservability.bootstrap(
+            sentryDSN: Secrets.sentryDSN,
+            telemetryAppID: Secrets.telemetryAppID
+        )
+    }
+
+    var body: some Scene {
+        WindowGroup { ContentView() }
+    }
+}
+```
+
+### Secrets Management
+
+Never hardcode DSNs in source. Use a build-time generated file:
+
+```swift
+// Generated by build script, gitignored
+enum Secrets {
+    static let sentryDSN = "https://key@sentry.io/project"
+    static let telemetryAppID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+}
+```
+
+```makefile
+# Makefile target to generate from .env
+secrets:
+	@echo "enum Secrets {" > Sources/Generated/Secrets.swift
+	@echo "    static let sentryDSN = \"$(SENTRY_DSN)\"" >> Sources/Generated/Secrets.swift
+	@echo "    static let telemetryAppID = \"$(TELEMETRY_APP_ID)\"" >> Sources/Generated/Secrets.swift
+	@echo "}" >> Sources/Generated/Secrets.swift
+```
+
+## App Store Privacy Compliance
+
+### Sentry
+
+| Data type | Collected | Linked to identity |
+|-----------|-----------|-------------------|
+| Crash logs | Yes | No |
+| Performance data | Yes | No |
+| Device identifiers | No | No |
+
+### TelemetryDeck
+
+| Data type | Collected | Linked to identity |
+|-----------|-----------|-------------------|
+| Product interaction | Yes | No |
+| Device identifiers | No (hashed) | No |
+
+Both are compatible with "Data Not Linked to You" in App Store Connect.
+
+## Rules
+
+- **Bootstrap once.** Call `AppObservability.bootstrap()` exactly once at app launch.
+- **Log level matters.** `.debug` for development, `.info` for operations, `.error` for failures, `.fault` for invariant violations.
+- **Privacy by default.** All string interpolations in `Logger` are private unless marked `.public`.
+- **Breadcrumbs at state transitions.** Add Sentry breadcrumbs when the user navigates, triggers features, or encounters errors.
+- **No PII in TelemetryDeck.** Feature names and categories only — never user content.
+
+## Anti-Patterns
+
+- ❌ DON'T log user quote content to analytics — privacy violation
+- ❌ DON'T enable Sentry in `#if DEBUG` — floods your dashboard with development crashes
+- ❌ DON'T use `print()` — use `Logger` for structured, filterable, privacy-aware logs
+- ❌ DON'T hardcode Sentry DSN — use build-time secrets generation
+- ❌ DON'T skip App Store Connect privacy questionnaire — both SDKs need declarations

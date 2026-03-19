@@ -34,6 +34,8 @@ Design system infrastructure and navigation patterns for SwiftUI apps.
 - [[17-safe-area-inset-stacking-and-bottom-pinned-views]] — why nested `safeAreaInset` fails and how to fix it. The five approaches that don't work and the one that does
 - [[21-accessibility-voiceover-dynamic-type-patterns]] — VoiceOver traversal order, Dynamic Type with @ScaledMetric, reduced motion fallbacks, WCAG color contrast audits, and automated accessibility testing
 - [[31-in-app-safari-for-external-links]] — always open external URLs inside the app via SFSafariViewController. Reusable SwiftUI wrapper, URL Identifiable conformance, design system tint integration
+- [[36-about-page-settings-bundle]] — drop-in About screen with app info, privacy policy, support/feedback, App Store rating, and Pro subscription with StoreKit 2 IAP
+- [[37-minimal-onboarding-flow]] — 2-4 page paged onboarding with permission requests, `@AppStorage` completion tracking, and Skip button. Shows once, gets out of the way
 
 **MOC:** [[ui-moc]]
 
@@ -47,6 +49,8 @@ Quality assurance patterns that keep modular apps reliable.
 - [[18-ui-testing-regression-and-smoke]] — XCUITest for critical user journeys: navigation, chat flow, settings, keyboard behavior
 - [[25-performance-monitoring-and-profiling-patterns]] — MetricKit, os.signpost custom intervals, launch time profiling, memory pressure tests, privacy-aware metric reporting
 - [[26-structured-logging-and-log-levels]] — per-module os.Logger configuration, log level discipline, privacy annotations, log forging prevention, OSLogStore for debug builds
+- [[38-maestro-e2e-testing]] — YAML-based E2E testing with Maestro for iOS simulators. Declarative flows, auto-waiting, CI integration, and reusable sub-flows for critical user journeys
+- [[39-structured-logging-crash-analytics]] — unified observability stack: os.Logger per module, Sentry crash reporting with breadcrumbs, TelemetryDeck anonymous analytics, and App Store privacy compliance
 
 **MOC:** [[testing-moc]]
 
@@ -65,6 +69,7 @@ Patterns for integrating Apple system frameworks into modular apps.
 - [[30-github-org-profile-and-website]] — GitHub org profile README with screenshots, static dark-theme marketing website on GitHub Pages, custom domain DNS setup (Namecheap), SSL enforcement, and deployment checklist
 - [[32-sentry-telemetrydeck-integration]] — Sentry crash reporting (programmatic project creation via REST API) and TelemetryDeck anonymous analytics. SDK setup, typed events, secrets management, App Store privacy labels and data collection questionnaire
 - [[33-app-store-optimization-aso-strategy]] — complete ASO pipeline: keyword strategy (30-30-100 rule, cross-locale multiplier), screenshot automation, app preview video, review prompts, in-app events, Custom Product Pages, WidgetKit retention, notifications, A/B testing, App Clips + Spotlight, and retention analytics
+- [[40-app-store-preflight-asc-cli]] — pre-submission rejection-pattern scanning with the `asc` CLI and preflight skills: metadata compliance, subscription/IAP rules, privacy manifest checks, entitlement validation, and app-type-specific checklists
 
 **MOC:** [[platform-frameworks-moc]]
 
@@ -82,8 +87,9 @@ Some of the most important patterns span multiple categories:
 
 - **The data flow triangle:** [[12-eventkit-coredata-sync-architecture]] feeds calendar context into [[08-on-device-llm-with-apple-foundation-models]] for analysis, [[11-notification-service-with-deep-linking]] for meeting reminders, and [[15-widgetkit-and-app-intents-integration]] for Home Screen display
 - **The monetization loop:** [[07-storekit2-intelligence-based-trial]] controls access to LLM queries, [[10-privacy-first-analytics-architecture]] tracks the trial funnel, and [[20-fastlane-app-store-connect-publishing]] delivers the app to users
-- **The testing pyramid:** [[05-swift-testing-and-tdd-patterns]] provides the foundation, [[09-debug-modes-and-mock-service-strategy]] supplies deterministic data, [[17-snapshot-testing-with-swift-snapshot-testing]] catches visual regressions, and [[18-ui-testing-regression-and-smoke]] validates critical user journeys
-- **The build-to-ship pipeline:** [[01-tuist-modular-architecture]] generates the project, [[18-makefile-for-ios-project-workflows]] orchestrates workflows, and [[20-fastlane-app-store-connect-publishing]] handles signing, notarization, and App Store delivery
+- **The testing pyramid:** [[05-swift-testing-and-tdd-patterns]] provides the foundation, [[09-debug-modes-and-mock-service-strategy]] supplies deterministic data, [[17-snapshot-testing-with-swift-snapshot-testing]] catches visual regressions, [[18-ui-testing-regression-and-smoke]] validates critical user journeys, and [[38-maestro-e2e-testing]] covers E2E smoke tests with Maestro
+- **The app shell:** [[36-about-page-settings-bundle]] provides the About/Settings page, [[37-minimal-onboarding-flow]] handles first launch, [[39-structured-logging-crash-analytics]] wires up observability, and [[07-storekit2-intelligence-based-trial]] controls monetization
+- **The build-to-ship pipeline:** [[01-tuist-modular-architecture]] generates the project, [[18-makefile-for-ios-project-workflows]] orchestrates workflows, [[40-app-store-preflight-asc-cli]] validates compliance before submission, and [[20-fastlane-app-store-connect-publishing]] handles signing, notarization, and App Store delivery
 - **Concurrency everywhere:** [[06-actor-based-concurrency-patterns]] defines the rules that [[02-protocol-driven-service-catalog]], [[12-eventkit-coredata-sync-architecture]], [[07-storekit2-intelligence-based-trial]], and [[10-privacy-first-analytics-architecture]] all follow
 
 ## Explorations Needed
