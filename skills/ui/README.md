@@ -20,6 +20,10 @@ That creates a specific layout challenge documented in [[17-safe-area-inset-stac
 
 [[31-in-app-safari-for-external-links]] enforces a project-wide rule: every external URL opens inside an `SFSafariViewController` rather than ejecting the user to Safari. The skill provides a reusable `SafariView` SwiftUI wrapper, a `URL: Identifiable` conformance for `item:`-based presentation, and toolbar tinting that uses tokens from [[04-design-system-as-core-module]].
 
+## Keeping UI on the System
+
+[[62-design-system-compliance-gate]] enforces the language [[04-design-system-as-core-module]] defines. Writers get a short rules file before they write UI, a lint checks only the lines they added, a reviewer checks what lint can't see (hierarchy, rhythm, states, contrast), and contrast tests guard the token pairs. It also covers the root fix for Dynamic Type: typography tokens defined as text styles, which look identical at the default size and scale everywhere. It builds on [[21-accessibility-voiceover-dynamic-type-patterns]].
+
 ## How They Connect
 
 ```
