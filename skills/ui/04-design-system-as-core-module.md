@@ -37,13 +37,15 @@ public enum NyxColors {
     public static let border = Color(red: 0.102, green: 0.102, blue: 0.141)
 }
 
+// Text styles, not fixed sizes: at the default content size each one matches the point size in its
+// comment, and every call site scales with Dynamic Type for free. See the Dynamic Type edge case below.
 public enum NyxTypography {
-    public static let display = Font.system(size: 34, weight: .bold, design: .default)
-    public static let title = Font.system(size: 22, weight: .semibold, design: .default)
-    public static let headline = Font.system(size: 17, weight: .medium, design: .default)
-    public static let body = Font.system(size: 15, weight: .regular, design: .default)
-    public static let caption = Font.system(size: 12, weight: .regular, design: .default)
-    public static let data = Font.system(size: 14, weight: .medium, design: .monospaced) // Terminal feel
+    public static let display = Font.system(.largeTitle, design: .default, weight: .bold)   // 34 pt
+    public static let title = Font.system(.title2, design: .default, weight: .semibold)     // 22 pt
+    public static let headline = Font.system(.body, design: .default, weight: .medium)      // 17 pt
+    public static let body = Font.system(.subheadline, design: .default, weight: .regular)  // 15 pt
+    public static let caption = Font.system(.caption, design: .default, weight: .regular)   // 12 pt
+    public static let data = Font.system(.footnote, design: .monospaced, weight: .medium)   // 13 pt, terminal feel
 }
 
 public enum NyxSpacing {
@@ -205,10 +207,11 @@ public struct NyxPressableStyle: ButtonStyle {
 ## Edge Cases
 
 - **Accessibility contrast ratios:** `NyxColors.textTertiary` at 0.4 opacity on `surfacePrimary` (black) yields a contrast ratio of ~5.3:1, meeting WCAG AA for normal text. However, `textTertiary` on `surfaceElevated` drops below AA. Audit all color combinations with Accessibility Inspector.
-- **Dynamic Type with `@ScaledMetric`:** The current typography uses fixed `Font.system(size:)` values. For accessibility compliance, wrap sizing values in `@ScaledMetric` or use `.font(.body)` with relative text styles:
+- **Dynamic Type: define tokens as text styles, never `Font.system(size:)`.** A token built from a fixed size never scales, and it silently takes every screen that uses it along. Apple's text styles have fixed default sizes (largeTitle 34, title 28, title2 22, title3 20, body/headline 17, callout 16, subheadline 15, footnote 13, caption 12, caption2 11). If your ladder matches them, migrating an existing fixed-size token set is **pixel-identical at the default size**, so default-size snapshot tests should pass unchanged. For values off the ladder (hero numerals, glyphs next to text), use `@ScaledMetric`:
   ```swift
-  @ScaledMetric(relativeTo: .body) var bodySize: CGFloat = 15
+  @ScaledMetric(relativeTo: .body) var glyphSize: CGFloat = 15
   ```
+  To keep new code on the tokens, see [[62-design-system-compliance-gate]]: a lint on added lines, a reviewer checklist, and contrast tests.
 - **Reduced motion fallbacks:** Users with "Reduce Motion" enabled (`UIAccessibility.isReduceMotionEnabled` / `@Environment(\.accessibilityReduceMotion)`) should see instant transitions instead of spring animations. Check this in `NyxAnimation`:
   ```swift
   public static var spring: Animation {

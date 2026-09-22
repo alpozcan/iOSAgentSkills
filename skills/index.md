@@ -36,6 +36,7 @@ Design system infrastructure and navigation patterns for SwiftUI apps.
 - [[31-in-app-safari-for-external-links]] — always open external URLs inside the app via SFSafariViewController. Reusable SwiftUI wrapper, URL Identifiable conformance, design system tint integration
 - [[36-about-page-settings-bundle]] — drop-in About screen with app info, privacy policy, support/feedback, App Store rating, and Pro subscription with StoreKit 2 IAP
 - [[37-minimal-onboarding-flow]] — 2-4 page paged onboarding with permission requests, `@AppStorage` completion tracking, and Skip button. Shows once, gets out of the way
+- [[62-design-system-compliance-gate]] — keep new screens on the tokens and the HIG: rules in the prompt, a lint on added lines only, a reviewer checklist, text-style typography for Dynamic Type, WCAG contrast tests
 
 **MOC:** [[ui-moc]]
 
@@ -51,6 +52,7 @@ Quality assurance patterns that keep modular apps reliable.
 - [[26-structured-logging-and-log-levels]] — per-module os.Logger configuration, log level discipline, privacy annotations, log forging prevention, OSLogStore for debug builds
 - [[38-maestro-e2e-testing]] — YAML-based E2E testing with Maestro for iOS simulators. Declarative flows, auto-waiting, CI integration, and reusable sub-flows for critical user journeys
 - [[39-structured-logging-crash-analytics]] — unified observability stack: os.Logger per module, Sentry crash reporting with breadcrumbs, TelemetryDeck anonymous analytics, and App Store privacy compliance
+- [[65-sentry-crash-analysis-for-releases-and-experiments]] — read-only Sentry REST analysis: release health, OOM/watchdog signatures, regression checks with Wilson/Fisher, breadcrumb forensics, crashes by experiment arm (denominators from the experiment platform)
 
 **MOC:** [[testing-moc]]
 
@@ -70,6 +72,8 @@ Patterns for integrating Apple system frameworks into modular apps.
 - [[32-sentry-telemetrydeck-integration]] — Sentry crash reporting (programmatic project creation via REST API) and TelemetryDeck anonymous analytics. SDK setup, typed events, secrets management, App Store privacy labels and data collection questionnaire
 - [[33-app-store-optimization-aso-strategy]] — complete ASO pipeline: keyword strategy (30-30-100 rule, cross-locale multiplier), screenshot automation, app preview video, review prompts, in-app events, Custom Product Pages, WidgetKit retention, notifications, A/B testing, App Clips + Spotlight, and retention analytics
 - [[40-app-store-preflight-asc-cli]] — pre-submission rejection-pattern scanning with the `asc` CLI and preflight skills: metadata compliance, subscription/IAP rules, privacy manifest checks, entitlement validation, and app-type-specific checklists
+- [[63-app-store-connect-subscriptions-via-api]] — subscription group, products, availability, prices in all storefronts via equalizations, per-territory free trials; availability must precede prices; idempotent re-runs
+- [[64-release-with-remote-ab-experiment]] — verify the SDK key is in the archive, match remote parameters to code, start the experiment before releasing (sticky assignment), guardrails, power arithmetic, protect the measurement
 
 **MOC:** [[platform-frameworks-moc]]
 
@@ -81,6 +85,12 @@ On-device AI architecture for privacy-first inference.
 
 **MOC:** [[ai-moc]]
 
+## Workflow & Planning
+
+How to run AI agents on iOS work without freezing the machine or wasting tokens.
+
+- [[61-multi-agent-feature-delivery-single-build-lane]] — parallel writers that never build, one low-priority serial build lane, a script-generated context pack, shared contracts, bounded translation batches, and cross-feature audits before release
+
 ## Cross-Domain Connections
 
 Some of the most important patterns span multiple categories:
@@ -90,6 +100,7 @@ Some of the most important patterns span multiple categories:
 - **The testing pyramid:** [[05-swift-testing-and-tdd-patterns]] provides the foundation, [[09-debug-modes-and-mock-service-strategy]] supplies deterministic data, [[17-snapshot-testing-with-swift-snapshot-testing]] catches visual regressions, [[18-ui-testing-regression-and-smoke]] validates critical user journeys, and [[38-maestro-e2e-testing]] covers E2E smoke tests with Maestro
 - **The app shell:** [[36-about-page-settings-bundle]] provides the About/Settings page, [[37-minimal-onboarding-flow]] handles first launch, [[39-structured-logging-crash-analytics]] wires up observability, and [[07-storekit2-intelligence-based-trial]] controls monetization
 - **The build-to-ship pipeline:** [[01-tuist-modular-architecture]] generates the project, [[18-makefile-for-ios-project-workflows]] orchestrates workflows, [[40-app-store-preflight-asc-cli]] validates compliance before submission, and [[20-fastlane-app-store-connect-publishing]] handles signing, notarization, and App Store delivery
+- **The agent release loop:** [[61-multi-agent-feature-delivery-single-build-lane]] builds the features, [[62-design-system-compliance-gate]] keeps their UI on the design system, [[63-app-store-connect-subscriptions-via-api]] prepares the products, [[64-release-with-remote-ab-experiment]] ships behind an experiment, and [[65-sentry-crash-analysis-for-releases-and-experiments]] reads the outcome
 - **Concurrency everywhere:** [[06-actor-based-concurrency-patterns]] defines the rules that [[02-protocol-driven-service-catalog]], [[12-eventkit-coredata-sync-architecture]], [[07-storekit2-intelligence-based-trial]], and [[10-privacy-first-analytics-architecture]] all follow
 
 ## Explorations Needed

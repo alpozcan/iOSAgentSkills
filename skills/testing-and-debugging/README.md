@@ -14,6 +14,10 @@ Quality assurance patterns that keep modular apps reliable across CI, simulators
 
 [[18-ui-testing-regression-and-smoke]] validates critical user journeys end-to-end via XCUITest: tab navigation from [[13-swiftui-custom-tab-bar-and-navigation]], chat input behavior from [[17-safe-area-inset-stacking-and-bottom-pinned-views]], settings interactions, and keyboard behavior. It uses launch arguments from [[09-debug-modes-and-mock-service-strategy]] for deterministic state.
 
+## Reading Crash Data After a Release
+
+[[65-sentry-crash-analysis-for-releases-and-experiments]] is the analysis counterpart to [[39-structured-logging-crash-analytics]]: a small stdlib script over the Sentry REST API for release health, OOM and watchdog signatures, regression checks with honest small-sample statistics, breadcrumb forensics, and crash comparison by experiment arm.
+
 ## How They Connect
 
 ```

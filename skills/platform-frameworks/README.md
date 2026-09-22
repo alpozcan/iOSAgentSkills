@@ -20,6 +20,12 @@ Three skills form a data pipeline that feeds the rest of the app:
 
 [[33-app-store-optimization-aso-strategy]] covers the full ASO pipeline once the app is ready for submission: keyword strategy with the 30-30-100 rule and cross-locale multiplier, fastlane screenshot automation, app preview video generation, review prompt optimization, in-app events, Custom Product Pages, WidgetKit retention, local notifications, A/B testing, App Clip + Spotlight indexing, and D1/D7/D30 retention analytics.
 
+## Subscriptions & Experiment-Driven Releases
+
+[[63-app-store-connect-subscriptions-via-api]] scripts the App Store Connect side of a subscription: group, products, localizations, territory availability (which must come before prices, or the API returns an opaque pricing error), prices in every storefront via equalized price points, and per-territory free trials, all safe to re-run. It complements the StoreKit client side in [[07-storekit2-intelligence-based-trial]].
+
+[[64-release-with-remote-ab-experiment]] treats "release the approved build" and "start the experiment" as one ordered operation: confirm the SDK key is in the uploaded archive, match remote parameter values to the code, start the experiment first because assignments are sticky, then release through the API. It then reads outcomes with [[65-sentry-crash-analysis-for-releases-and-experiments]].
+
 ## How They Connect
 
 ```
